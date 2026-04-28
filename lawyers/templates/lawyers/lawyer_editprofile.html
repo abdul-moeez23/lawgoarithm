@@ -1,0 +1,279 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}Edit Profile{% endblock %}
+{% block page_title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-2">Edit Your Profile</h2>
+        <p class="text-muted mb-4">Update your information below. Admin may re-verify changes if needed.</p>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- Profile Picture Section -->
+    <div class="card-box mb-4 text-center">
+        <div class="mb-3 position-relative d-inline-block">
+            <div class="avatar-upload">
+                <div class="avatar-preview">
+                    {% if lawyer.profile_picture %}
+                        <img id="imagePreview" src="{{ lawyer.profile_picture.url }}" alt="Profile Preview">
+                    {% else %}
+                        <div id="placeholderIcon" class="d-flex align-items-center justify-content-center h-100 bg-light text-muted">
+                            <i class="fas fa-user fa-3x"></i>
+                        </div>
+                        <img id="imagePreview" src="" alt="Profile Preview" style="display: none;">
+                    {% endif %}
+                </div>
+                <div class="avatar-edit">
+                    <input type='file' id="imageUpload" name="profile_picture" accept=".png, .jpg, .jpeg" />
+                    <label for="imageUpload" class="btn-edit-img shadow-sm"><i class="fas fa-camera"></i></label>
+                </div>
+            </div>
+        </div>
+        <h5 class="mb-1">Profile Photo</h5>
+        <p class="text-muted small">Allowed files: JPG, JPEG, PNG</p>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-user me-2"></i>Personal Information</h5>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-user text-muted me-2"></i>Full Name
+                </label>
+                <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-envelope text-muted me-2"></i>Email
+                </label>
+                <input type="email" class="form-control" value="{{ user.email }}" readonly>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-phone text-muted me-2"></i>Phone
+                </label>
+                <input type="text" class="form-control" name="phone" value="{{ user.phone }}" id="phone" required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-city text-muted me-2"></i>City
+                </label>
+                <select class="form-select" name="city" required>
+                    {% for city in cities %}
+                    <option value="{{ city.id }}" {% if city.id == lawyer.city_id %}selected{% endif %}>
+                        {{ city.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Info -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-briefcase me-2"></i>Professional Information</h5>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-user-clock text-muted me-2"></i>Experience (Years)
+                </label>
+                <input type="number" class="form-control" name="experience" value="{{ lawyer.experience_years }}" required>
+            </div>
+
+            <!-- Fee Band removed -->
+            <!-- <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-money-bill-wave text-muted me-2"></i>Fee Band
+                </label>
+                <select class="form-select" name="fee_band" required>
+                    {% for band in fee_bands %}
+                    <option value="{{ band.id }}" {% if band.id == lawyer.fee_band_id %}selected{% endif %}>
+                        {{ band.label }} (Rs {{ band.min_fee }} - Rs {{ band.max_fee }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div> -->
+        </div>
+    </div>
+
+    <!-- Courts -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-landmark me-2"></i>Courts You Practice In</h5>
+        <p class="text-muted small mb-3">Select all courts where you practice</p>
+
+        <div class="row">
+            {% for court in courts %}
+            <div class="col-md-6 col-lg-4 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" 
+                           name="courts" value="{{ court.id }}"
+                           id="court_{{ court.id }}"
+                           {% if court in lawyer.courts.all %}checked{% endif %}>
+
+                    <label class="form-check-label" for="court_{{ court.id }}">
+                        {{ court.name }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Languages -->
+    <div class="card-box mb-4">
+        {% comment %} <h5><i class="fas fa-language me-2"></i>Languages</h5>
+        <p class="text-muted small mb-3">Select all languages you speak</p> {% endcomment %}
+
+        <div class="row">
+            {% for language in languages %}
+            <div class="col-md-6 col-lg-3 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           name="languages" value="{{ language.id }}"
+                           id="lang_{{ language.id }}"
+                           {% if language in lawyer.languages.all %}checked{% endif %}>
+
+                    <label class="form-check-label" for="lang_{{ language.id }}">
+                        {{ language.name }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Practice Areas -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-balance-scale me-2"></i>Practice Areas</h5>
+        <p class="text-muted small mb-3">Select your practice areas</p>
+
+        <div class="row">
+            {% for area in practice_areas %}
+            <div class="col-md-6 col-lg-4 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           name="practice_areas" value="{{ area.id }}"
+                           id="area_{{ area.id }}"
+                           {% if area in lawyer.practice_areas.all %}checked{% endif %}>
+
+                    <label class="form-check-label" for="area_{{ area.id }}">
+                        {{ area.name }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-file-upload me-2"></i>Update Certificates</h5>
+
+        <div class="mb-3">
+            <label class="form-label">
+                <i class="fas fa-paperclip text-muted me-2"></i>Upload Documents
+            </label>
+            <input type="file" class="form-control" name="documents" accept=".pdf,.jpg,.jpeg,.png">
+            <small class="text-muted">If you upload new files, old documents will be replaced.</small>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary-custom btn-lg px-5">
+            <i class="fas fa-save me-2"></i>Update Profile
+        </button>
+    </div>
+</form>
+<script>
+document.getElementById('phone').addEventListener('input', function (e) {
+    // Remove all non-digits AND non-plus characters
+    this.value = this.value.replace(/[^0-9+]/g, '');
+});
+</script>
+
+<style>
+    /* Avatar Upload Styles */
+    .avatar-upload {
+        position: relative;
+        max-width: 150px;
+        margin: 0 auto;
+    }
+
+    .avatar-preview {
+        width: 150px;
+        height: 150px;
+        position: relative;
+        border-radius: 50%;
+        border: 4px solid #fee2b3;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .avatar-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-edit {
+        position: absolute;
+        right: 0px;
+        bottom: 0px;
+        z-index: 1;
+    }
+
+    .avatar-edit input {
+        display: none;
+    }
+
+    .btn-edit-img {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #364d59;
+        color: #fee2b3;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        border: 2px solid white;
+    }
+
+    .btn-edit-img:hover {
+        background: #2c3e48;
+        transform: scale(1.1);
+    }
+</style>
+
+<script>
+    // Image Preview
+    document.getElementById('imageUpload').addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imagePreview').setAttribute('src', e.target.result);
+                document.getElementById('imagePreview').style.display = 'block';
+                var placeholder = document.getElementById('placeholderIcon');
+                if(placeholder) placeholder.style.display = 'none';
+            }
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+</script>
+
+{% endblock %}

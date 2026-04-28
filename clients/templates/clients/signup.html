@@ -1,0 +1,370 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Lawgorithm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-navy: #0f172a;
+            --secondary-navy: #1e293b;
+            --accent-gold: #c9a961;
+            --text-dark: #1e293b;
+            --text-gray: #64748b;
+            --white: #ffffff;
+            --border-color: #e2e8f0;
+            --error-bg: #fef2f2;
+            --error-text: #ef4444;
+            --success-bg: #f0fdf4;
+            --success-text: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            color: var(--text-dark);
+        }
+
+        .auth-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* Left Side */
+        .brand-section {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-navy) 0%, #1e293b 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .brand-section { display: flex; width: 50%; }
+        }
+
+        .brand-content { z-index: 2; color: var(--white); max-width: 500px; text-align: center; }
+
+        .brand-logo {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-gold), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-tagline { font-size: 1.5rem; font-weight: 600; margin-bottom: 2rem; color: #e2e8f0; }
+        .brand-desc { font-size: 1.1rem; color: #94a3b8; line-height: 1.6; }
+
+        .circle-1, .circle-2 {
+            position: absolute; border-radius: 50%; z-index: 1;
+        }
+        .circle-1 { top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(201,169,97,0.1) 0%, rgba(255,255,255,0) 70%); }
+        .circle-2 { bottom: -50px; left: -50px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(201,169,97,0.05) 0%, rgba(255,255,255,0) 70%); }
+
+        /* Right Side - Form */
+        .form-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-color: #f8fafc;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 520px;
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-header { margin-bottom: 2rem; text-align: center; }
+        .form-title { font-family: 'Poppins', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 0.5rem; }
+        .form-subtitle { color: var(--text-gray); font-size: 0.95rem; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; color: var(--text-dark); font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; }
+        
+        .input-group { position: relative; }
+        .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-gray); font-size: 1rem; }
+        
+        .form-input {
+            width: 100%; padding: 0.8rem 1rem 0.8rem 2.8rem;
+            border: 1px solid var(--border-color); border-radius: 10px;
+            font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--text-dark);
+            transition: all 0.3s ease;
+        }
+        .form-input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.1); }
+
+        .btn-submit {
+            width: 100%; padding: 0.9rem; background-color: var(--primary-navy); color: var(--white);
+            border: none; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; margin-top: 1rem;
+        }
+        .btn-submit:hover { background-color: #243a5e; transform: translateY(-2px); }
+
+        .login-link { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-gray); }
+        .login-link a { color: var(--primary-navy); text-decoration: none; font-weight: 600; }
+        .login-link a:hover { color: var(--accent-gold); }
+
+        .error-message { background: var(--error-bg); color: var(--error-text); padding: 0.75rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+
+        @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+
+        /* Social Login CSS */
+        .social-buttons { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .btn-social {
+            display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+            width: 100%; padding: 0.8rem; border-radius: 10px;
+            font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500;
+            text-decoration: none; transition: all 0.3s ease;
+            cursor: pointer; position: relative;
+        }
+        .btn-google {
+            background-color: #fff; color: #374151; border: 1px solid #e5e7eb;
+        }
+        .btn-google:hover { background-color: #f9fafb; border-color: #d1d5db; }
+        
+
+        .divider {
+            display: flex; align-items: center; text-align: center; margin-bottom: 1.5rem;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; border-bottom: 1px solid #e2e8f0;
+        }
+        .divider span { padding: 0 1rem; color: #94a3b8; font-size: 0.85rem; font-weight: 500; }
+    </style>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="brand-section">
+            <div class="circle-1"></div>
+            <div class="circle-2"></div>
+            <div class="brand-content">
+                <div class="brand-logo">Lawgorithm</div>
+                <h2 class="brand-tagline">Client Registration</h2>
+                <p class="brand-desc">Join our platform to connect with top-tier legal professionals and manage your cases efficiently.</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-container">
+                <div class="form-header">
+                    <h1 class="form-title">Create Account</h1>
+                    <p class="form-subtitle">Enter your personal details to get started</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i> {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <div class="input-group">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="first_name" name="first_name" class="form-input" required placeholder="John">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <div class="input-group">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="last_name" name="last_name" class="form-input" required placeholder="Doe">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <div class="input-group">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="email" name="email" class="form-input" required placeholder="john@example.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="password" name="password" class="form-input" required placeholder="Create a password">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-input" required placeholder="Confirm your password">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Create Client Account</button>
+                    
+                    <div class="divider">
+                        <span>Or sign up with</span>
+                    </div>
+
+                    <!-- Social Login Buttons -->
+                    <div class="social-buttons">
+                        {% load socialaccount %}
+                        <a href="{% provider_login_url 'google' %}" class="btn-social btn-google">
+                            <i class="fab fa-google"></i>
+                            <span>Google</span>
+                        </a>
+                    </div>
+                    
+                    <div class="login-link">
+                        Already have an account? <a href="{% url 'signin' %}">Sign In</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirm_password');
+            const submitBtn = document.querySelector('.btn-submit');
+
+            // Creating password feedback element
+            const passwordFeedback = document.createElement('ul');
+            passwordFeedback.id = 'password-feedback';
+            passwordFeedback.style.fontSize = '0.8rem';
+            passwordFeedback.style.paddingLeft = '1.5rem';
+            passwordFeedback.style.marginTop = '0.5rem';
+            passwordFeedback.style.color = 'var(--text-gray)';
+            passwordFeedback.innerHTML = `
+                <li id="len" style="transition: all 0.2s">At least 8 characters</li>
+                <li id="upper" style="transition: all 0.2s">At least 1 uppercase letter</li>
+                <li id="special" style="transition: all 0.2s">At least 1 special symbol</li>
+                <li id="match" style="transition: all 0.2s">Passwords must match</li>
+            `;
+            
+            confirmPassword.closest('.form-group').after(passwordFeedback);
+
+            function validate() {
+                let isValid = true;
+                const pVal = password.value;
+                const cpVal = confirmPassword.value;
+
+                // Length check
+                const lenLi = document.getElementById('len');
+                if (pVal.length >= 8) {
+                    lenLi.style.color = 'var(--success-text)';
+                    lenLi.innerHTML = '<i class="fas fa-check"></i> At least 8 characters';
+                } else {
+                    lenLi.style.color = 'var(--error-text)';
+                    lenLi.innerHTML = '<i class="fas fa-times"></i> At least 8 characters';
+                    isValid = false;
+                }
+
+                // Uppercase check
+                const upperLi = document.getElementById('upper');
+                if (/[A-Z]/.test(pVal)) {
+                    upperLi.style.color = 'var(--success-text)';
+                    upperLi.innerHTML = '<i class="fas fa-check"></i> At least 1 uppercase letter';
+                } else {
+                    upperLi.style.color = 'var(--error-text)';
+                    upperLi.innerHTML = '<i class="fas fa-times"></i> At least 1 uppercase letter';
+                    isValid = false;
+                }
+
+                // Special character check
+                const specialLi = document.getElementById('special');
+                if (/[\W_]/.test(pVal)) {
+                    specialLi.style.color = 'var(--success-text)';
+                    specialLi.innerHTML = '<i class="fas fa-check"></i> At least 1 special symbol';
+                } else {
+                    specialLi.style.color = 'var(--error-text)';
+                    specialLi.innerHTML = '<i class="fas fa-times"></i> At least 1 special symbol';
+                    isValid = false;
+                }
+
+                // Match check
+                const matchLi = document.getElementById('match');
+                if (pVal === cpVal && pVal !== '') {
+                    matchLi.style.color = 'var(--success-text)';
+                    matchLi.innerHTML = '<i class="fas fa-check"></i> Passwords must match';
+                } else if (cpVal !== '') {
+                    matchLi.style.color = 'var(--error-text)';
+                    matchLi.innerHTML = '<i class="fas fa-times"></i> Passwords must match';
+                    isValid = false;
+                } else {
+                    matchLi.style.color = 'var(--text-gray)';
+                    matchLi.innerHTML = 'Passwords must match';
+                    isValid = false;
+                }
+
+                submitBtn.disabled = !isValid;
+                submitBtn.style.opacity = isValid ? '1' : '0.5';
+                submitBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+                
+                return isValid;
+            }
+
+            password.addEventListener('input', validate);
+            confirmPassword.addEventListener('input', validate);
+
+            form.addEventListener('submit', function(e) {
+                if (!validate()) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Initial call
+            validate();
+
+            // Auto-hide messages after 5 seconds
+            const messages = document.querySelectorAll('.error-message, .success-message');
+            messages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.transition = 'opacity 1s ease-out, transform 0.5s ease-in';
+                    msg.style.opacity = '0';
+                    msg.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        msg.remove();
+                    }, 1000);
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Lawgorithm - AI-Powered Lawyer Matching Platform. Find verified lawyers matched to your legal case with our intelligent Fit Score algorithm.">
+  <meta name="keywords"
+    content="lawyer matching, AI legal platform, find lawyer, legal cases, verified lawyers, fit score">
+  <title>Lawgorithm - AI-Powered Lawyer Matching Platform</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="{% static 'css/lawgorithm.css' %}">
+</head>
+
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container navbar-container">
+      <div class="navbar-logo">
+        <span class="logo-text">Lawgorithm</span>
+      </div>
+      <nav class="navbar-nav">
+        <a href="#home" class="nav-link">Home</a>
+        <a href="#find-lawyers" class="nav-link">Find Lawyers</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="{% url 'lawyer_login' %}" class="nav-link">For Lawyers</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+      <div class="navbar-actions">
+        <a href="{% url 'signin' %}" class="btn btn-secondary">Sign In</a>
+        <a href="{% url 'post_case' %}" class="btn-primary glow" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border-radius: 8px;">Post a Case</a>
+      </div>
+      <button class="mobile-menu-toggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+      <div class="hero-background"></div>
+      <div class="container hero-container">
+        <h1 class="hero-title">AI-Powered Lawyer Matching for Real Legal Cases</h1>
+        <p class="hero-subtitle">Connect with verified lawyers who match your case using our intelligent Fit Score
+          algorithm</p>
+
+        <div class="hero-actions">
+          <a href="#find-lawyers" class="btn-primary btn-large" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Search Lawyers</a>
+          <a href="{% url 'post_case' %}" class="btn-secondary btn-large" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Post a Case</a>
+        </div>
+
+        <form class="hero-search" method="GET" action="{% url 'search_lawyers' %}">
+          <div class="search-field">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M9 17A8 8 0 1 0 9 1a8 8 0 0 0 0 16zM18 18l-4-4" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" />
+            </svg>
+            <input type="text" name="practice_area" placeholder="Practice area (e.g., Criminal Law)" required>
+          </div>
+          <div class="search-field">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 2c-2.8 0-5 2.2-5 5 0 3.8 5 11 5 11s5-7.2 5-11c0-2.8-2.2-5-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"
+                fill="currentColor" />
+            </svg>
+            <input type="text" name="city" placeholder="City">
+          </div>
+          <button type="submit" class="btn-primary btn-large" >Search</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Trust Strip -->
+    <section class="trust-strip">
+      <div class="container trust-container">
+        <div class="trust-badges">
+          <div class="trust-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z" fill="#00e5ff" />
+              <path d="M10 14l-3-3 1.4-1.4L10 11.2l5.6-5.6L17 7l-7 7z" fill="#0b0f1a" />
+            </svg>
+            <span>Verified License</span>
+          </div>
+          <div class="trust-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L3 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z" fill="#7c77ff" />
+              <path d="M10 14l-3-3 1.4-1.4L10 11.2l5.6-5.6L17 7l-7 7z" fill="#0b0f1a" />
+            </svg>
+            <span>Admin-Verified</span>
+          </div>
+          <div class="trust-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9V6zm3 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                fill="#00e5ff" />
+            </svg>
+            <span>Secure Data</span>
+          </div>
+        </div>
+        <p class="privacy-note">We only share your details with lawyers you choose.</p>
+      </div>
+    </section>
+
+    <!-- Animated Stats -->
+    <section class="stats">
+      <div class="container stats-container">
+        <div class="stat-card">
+          <svg class="stat-icon" width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="22" stroke="#00e5ff" stroke-width="2" />
+            <path d="M24 14v10l7 4" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <div class="stat-number" data-target="500">{{verified_lawyers}}</div>
+          <div class="stat-label">Verified Lawyers</div>
+        </div>
+        <div class="stat-card">
+          <svg class="stat-icon" width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="10" y="14" width="28" height="24" rx="2" stroke="#7c77ff" stroke-width="2" />
+            <path d="M10 20h28M18 14v-4M30 14v-4" stroke="#7c77ff" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <div class="stat-number" data-target="1200">0</div>
+          <div class="stat-label">Active Cases</div>
+        </div>
+        <div class="stat-card">
+          <svg class="stat-icon" width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <path d="M24 4l6 12 14 2-10 10 2 14-12-6-12 6 2-14-10-10 14-2 6-12z" stroke="#00e5ff" stroke-width="2"
+              stroke-linejoin="round" />
+          </svg>
+          <div class="stat-number" data-target="850">0</div>
+          <div class="stat-label">Successful Matches</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Three simple steps to find your perfect legal match</p>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-icon">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="32" r="30" stroke="#00e5ff" stroke-width="2" />
+                <path d="M32 20v24M20 32h24" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" />
+              </svg>
+            </div>
+            <h3 class="step-title">1. Post Your Case</h3>
+            <p class="step-description">Describe your legal situation and requirements in a simple form</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-icon">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="32" r="30" stroke="#7c77ff" stroke-width="2" />
+                <path d="M20 32l8 8 16-16" stroke="#7c77ff" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </div>
+            <h3 class="step-title">2. Get Matched</h3>
+            <p class="step-description">Our AI analyzes your case and matches you with verified lawyers</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-icon">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="32" r="30" stroke="#00e5ff" stroke-width="2" />
+                <path d="M24 28c0-4.4 3.6-8 8-8s8 3.6 8 8M20 40h24v4H20z" stroke="#00e5ff" stroke-width="2"
+                  stroke-linecap="round" />
+              </svg>
+            </div>
+            <h3 class="step-title">3. Connect & Resolve</h3>
+            <p class="step-description">Review Fit Scores, contact lawyers, and resolve your legal matter</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Lawyers -->
+    <section class="featured-lawyers" id="find-lawyers">
+      <div class="container">
+        <h2 class="section-title">Featured Lawyers</h2>
+        <p class="section-subtitle">Top-rated verified legal professionals</p>
+
+        <div class="lawyers-grid">
+          <article class="lawyer-card">
+            <div class="lawyer-photo"></div>
+            <h3 class="lawyer-name">Sarah Mitchell</h3>
+            <p class="lawyer-city">New York, NY</p>
+            <div class="lawyer-areas">Criminal Law, Civil Rights</div>
+            <div class="lawyer-rating">
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star half"></span>
+              <span class="rating-text">4.5</span>
+            </div>
+            <div class="lawyer-actions">
+              <button class="btn-outline">View Profile</button>
+              <button class="btn-primary-small">Contact</button>
+            </div>
+          </article>
+
+          <article class="lawyer-card">
+            <div class="lawyer-photo"></div>
+            <h3 class="lawyer-name">James Rodriguez</h3>
+            <p class="lawyer-city">Los Angeles, CA</p>
+            <div class="lawyer-areas">Business Law, Contracts</div>
+            <div class="lawyer-rating">
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="rating-text">5.0</span>
+            </div>
+            <div class="lawyer-actions">
+              <button class="btn-outline">View Profile</button>
+              <button class="btn-primary-small">Contact</button>
+            </div>
+          </article>
+
+          <article class="lawyer-card">
+            <div class="lawyer-photo"></div>
+            <h3 class="lawyer-name">Emily Chen</h3>
+            <p class="lawyer-city">Chicago, IL</p>
+            <div class="lawyer-areas">Immigration, Family Law</div>
+            <div class="lawyer-rating">
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star"></span>
+              <span class="rating-text">4.0</span>
+            </div>
+            <div class="lawyer-actions">
+              <button class="btn-outline">View Profile</button>
+              <button class="btn-primary-small">Contact</button>
+            </div>
+          </article>
+
+          <article class="lawyer-card">
+            <div class="lawyer-photo"></div>
+            <h3 class="lawyer-name">Michael Thompson</h3>
+            <p class="lawyer-city">Houston, TX</p>
+            <div class="lawyer-areas">Personal Injury, Medical</div>
+            <div class="lawyer-rating">
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star half"></span>
+              <span class="rating-text">4.5</span>
+            </div>
+            <div class="lawyer-actions">
+              <button class="btn-outline">View Profile</button>
+              <button class="btn-primary-small">Contact</button>
+            </div>
+          </article>
+
+          <article class="lawyer-card">
+            <div class="lawyer-photo"></div>
+            <h3 class="lawyer-name">Jennifer Park</h3>
+            <p class="lawyer-city">San Francisco, CA</p>
+            <div class="lawyer-areas">Tech Law, IP Rights</div>
+            <div class="lawyer-rating">
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="rating-text">5.0</span>
+            </div>
+            <div class="lawyer-actions">
+              <button class="btn-outline">View Profile</button>
+              <button class="btn-primary-small">Contact</button>
+            </div>
+          </article>
+
+          <article class="lawyer-card">
+            <div class="lawyer-photo"></div>
+            <h3 class="lawyer-name">David Williams</h3>
+            <p class="lawyer-city">Miami, FL</p>
+            <div class="lawyer-areas">Real Estate, Property</div>
+            <div class="lawyer-rating">
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star filled"></span>
+              <span class="star"></span>
+              <span class="rating-text">4.0</span>
+            </div>
+            <div class="lawyer-actions">
+              <button class="btn-outline">View Profile</button>
+              <button class="btn-primary-small">Contact</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fit Score Panel -->
+    <section class="fit-score-panel">
+      <div class="container">
+        <h2 class="section-title">Understanding Your Fit Score</h2>
+        <p class="section-subtitle">Our AI analyzes multiple factors to match you with the perfect lawyer</p>
+
+        <div class="fit-score-demo">
+          <div class="fit-score-number">
+            <div class="score-circle">
+              <span class="score-value">87</span>
+              <span class="score-max">/100</span>
+            </div>
+            <p class="score-label">Example Fit Score</p>
+          </div>
+
+          <div class="fit-score-breakdown">
+            <div class="score-component">
+              <div class="component-header">
+                <span class="component-name">Semantic Match</span>
+                <span class="component-value">92%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="--progress: 92%; --delay: 0s;"></div>
+              </div>
+            </div>
+
+            <div class="score-component">
+              <div class="component-header">
+                <span class="component-name">Court Experience</span>
+                <span class="component-value">85%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="--progress: 85%; --delay: 0.3s;"></div>
+              </div>
+            </div>
+
+            <div class="score-component">
+              <div class="component-header">
+                <span class="component-name">Budget Fit</span>
+                <span class="component-value">84%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="--progress: 84%; --delay: 0.6s;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+      <div class="container">
+        <h2 class="section-title">What Our Clients Say</h2>
+        <p class="section-subtitle">Real experiences from real people</p>
+
+        <div class="testimonials-slider">
+          <div class="testimonials-track">
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+              </div>
+              <p class="testimonial-quote">"Found the perfect lawyer for my business dispute in under 24 hours. The Fit
+                Score was incredibly accurate!"</p>
+              <div class="testimonial-author">
+                <strong>Alex Johnson</strong>
+                <span>Business Law Case</span>
+              </div>
+            </div>
+
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star half"></span>
+              </div>
+              <p class="testimonial-quote">"The platform made finding an immigration lawyer so much easier. Highly
+                recommend for anyone needing legal help."</p>
+              <div class="testimonial-author">
+                <strong>Maria Garcia</strong>
+                <span>Immigration Case</span>
+              </div>
+            </div>
+
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+              </div>
+              <p class="testimonial-quote">"Exceptional service! The AI matching saved me hours of research and
+                connected me with a top-rated criminal defense attorney."</p>
+              <div class="testimonial-author">
+                <strong>Robert Lee</strong>
+                <span>Criminal Defense Case</span>
+              </div>
+            </div>
+
+            <!-- Duplicate for infinite loop -->
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+              </div>
+              <p class="testimonial-quote">"Found the perfect lawyer for my business dispute in under 24 hours. The Fit
+                Score was incredibly accurate!"</p>
+              <div class="testimonial-author">
+                <strong>Alex Johnson</strong>
+                <span>Business Law Case</span>
+              </div>
+            </div>
+
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star half"></span>
+              </div>
+              <p class="testimonial-quote">"The platform made finding an immigration lawyer so much easier. Highly
+                recommend for anyone needing legal help."</p>
+              <div class="testimonial-author">
+                <strong>Maria Garcia</strong>
+                <span>Immigration Case</span>
+              </div>
+            </div>
+
+            <div class="testimonial-card">
+              <div class="testimonial-rating">
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+                <span class="star filled"></span>
+              </div>
+              <p class="testimonial-quote">"Exceptional service! The AI matching saved me hours of research and
+                connected me with a top-rated criminal defense attorney."</p>
+              <div class="testimonial-author">
+                <strong>Robert Lee</strong>
+                <span>Criminal Defense Case</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lawyer Join CTA -->
+    <section class="lawyer-cta">
+      <div class="container lawyer-cta-container">
+        <h2 class="cta-title">Are You a Lawyer?</h2>
+        <p class="cta-subtitle">Join our platform and connect with clients who need your expertise</p>
+        <a href="{% url 'lawyer_login' %}" class="btn-primary btn-large glow">Join as Lawyer</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" id="contact">
+    <div class="container footer-container">
+      <div class="footer-column">
+        <h3 class="footer-heading">Lawgorithm</h3>
+        <p class="footer-text">AI-powered lawyer matching for real legal cases. Find verified lawyers with confidence.
+        </p>
+        <div class="social-icons">
+          <a href="#" aria-label="Facebook">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3c-1.7 0-3 1.3-3 3v3H9v4h3v8h4v-8h3l1-4h-4V5c0-.6.4-1 1-1h3V2z" />
+            </svg>
+          </a>
+          <a href="#" aria-label="Twitter">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5 0-.28-.03-.56-.08-.83A7.72 7.72 0 0 0 23 3z" />
+            </svg>
+          </a>
+          <a href="#" aria-label="LinkedIn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-column">
+        <h4 class="footer-heading">About</h4>
+        <ul class="footer-links">
+          <li><a href="#about">About Us</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#lawyers">Our Lawyers</a></li>
+          <li><a href="#blog">Blog</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4 class="footer-heading">Legal</h4>
+        <ul class="footer-links">
+          <li><a href="#terms">Terms of Service</a></li>
+          <li><a href="#privacy">Privacy Policy</a></li>
+          <li><a href="#cookies">Cookie Policy</a></li>
+          <li><a href="#disclaimer">Disclaimer</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4 class="footer-heading">Contact</h4>
+        <ul class="footer-links">
+          <li><a href="mailto:support@lawgorithm.com">support@lawgorithm.com</a></li>
+          <li><a href="tel:+1234567890">+1 (234) 567-890</a></li>
+          <li>123 Legal Street<br>Suite 100<br>New York, NY 10001</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container">
+        <p>&copy; 2025 Lawgorithm. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>

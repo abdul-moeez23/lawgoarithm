@@ -1,0 +1,238 @@
+{% extends 'clients/dashboard_base.html' %}
+
+{% block title %}Dashboard - Lawgorithm{% endblock %}
+{% block header_title %}Welcome back, {{ user.first_name|default:'Client' }}{% endblock %}
+
+{% block actions %}
+<a href="{% url 'post_case' %}" class="btn-primary">
+    <i class="fas fa-plus"></i> Post New Case
+</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .bg-blue {
+        background: #ebf5ff;
+        color: #1c64f2;
+    }
+
+    .bg-green {
+        background: #f0fdf4;
+        color: #16a34a;
+    }
+
+    .bg-purple {
+        background: #f3e8ff;
+        color: #9333ea;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-navy);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-info p {
+        color: var(--text-gray);
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon bg-blue">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ active_cases }}</h3>
+            <p>Active Cases</p>
+        </div>
+    </div>
+
+    <a href="{% url 'hired_lawyers' %}" class="stat-card" style="text-decoration: none; transition: transform 0.2s;">
+        <div class="stat-icon bg-green">
+            <i class="fas fa-gavel"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ hired_count }}</h3>
+            <p>Hired Lawyers</p>
+        </div>
+    </a>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-purple">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ appointments_count|default:0 }}</h3>
+            <p>Appointments</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- PENDING REVIEWS SECTION -->
+{% if pending_reviews %}
+<div style="margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem; color: var(--primary-navy); display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-star text-warning"></i> Pending Reviews
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+        {% for review_item in pending_reviews %}
+        <div class="stat-card" style="border-left: 4px solid #f59e0b; display: block; text-decoration: none;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h4 style="margin-bottom: 0.5rem; color: var(--primary-navy);">{{
+                        review_item.lawyer.user.get_full_name }}</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-gray); margin-bottom: 0.5rem;">
+                        Case: <strong>{{ review_item.case.title }}</strong>
+                    </p>
+                    <span class="badge badge-warning"
+                        style="background:#fffbeb; color:#d97706; font-size:0.75rem;">Waiting for Review</span>
+                </div>
+                <a href="{% url 'case_detail' review_item.case.id %}?tab=details#review-section" class="btn-primary"
+                    style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    Rate Now
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+
+    <div class="recent-activity">
+        <h3 style="margin-bottom: 1.5rem; color: var(--primary-navy); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-history"></i> Recent Activity
+        </h3>
+        {% if recent_cases %}
+        {% for case in recent_cases %}
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem;">
+            <div>
+                <h4 style="margin-bottom: 0.25rem; font-size: 1rem;">{{ case.title }}</h4>
+                <div style="font-size: 0.8rem; color: var(--text-gray);">
+                    <i class="far fa-clock"></i> Updated {{ case.updated_at|timesince }} ago
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span class="badge badge-{{ case.status }}" style="display: inline-block; margin-bottom: 0.5rem;">
+                    {{ case.get_status_display }}
+                </span>
+                <br>
+                <a href="{% url 'case_detail' case.id %}" class="btn-outline"
+                    style="padding: 0.3rem 0.8rem; font-size: 0.8rem; border-radius: 6px;">View</a>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <div style="color: #cbd5e1; font-size: 3rem; margin-bottom: 1rem;"><i class="fas fa-clipboard-list"></i>
+            </div>
+            <p>No activity yet. Start by posting your first legal case!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="hired-lawyers">
+        <h3 style="margin-bottom: 1.5rem; color: var(--primary-navy); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-user-tie"></i> My Hired Lawyers
+        </h3>
+        {% if hired_interactions %}
+        {% for interaction in hired_interactions %}
+        <div class="card" style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem;">
+            <div class="avatar" style="width: 50px; height: 50px; font-size: 1.2rem; flex-shrink: 0;">
+                {% if interaction.lawyer.profile_picture %}
+                <img src="{{ interaction.lawyer.profile_picture.url }}" alt=""
+                    style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                {{ interaction.lawyer.user.first_name|make_list|first|upper }}
+                {% endif %}
+            </div>
+            <div style="flex: 1;">
+                <h4 style="margin-bottom: 0.2rem; font-size: 1rem;">{{ interaction.lawyer.user.get_full_name }}</h4>
+                <p style="font-size: 0.8rem; color: var(--text-gray); margin-bottom: 0.2rem;">
+                    <i class="fas fa-briefcase me-1"></i> {{ interaction.case.title|truncatechars:30 }}
+                </p>
+                <div style="margin-top: 0.75rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                        <span id="case-{{ interaction.case.id }}-status-text"
+                            style="font-size: 0.7rem; color: var(--text-gray); font-weight: 600;">
+                            {{ interaction.case.detailed_status|default:"In Progress" }}
+                        </span>
+                        <span id="case-{{ interaction.case.id }}-percentage-text"
+                            style="font-size: 0.7rem; color: var(--accent-gold); font-weight: 700;">
+                            {{ interaction.case.progress_percentage }}%
+                        </span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: #f1f5f9; border-radius: 2px;">
+                        <div id="case-{{ interaction.case.id }}-bar-fill" class="dynamic-progress-bar"
+                            data-progress="{{ interaction.case.progress_percentage }}"
+                            style="height: 100%; background: var(--accent-gold); border-radius: 2px; transition: width 0.5s ease-in-out;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'case_detail' interaction.case.id %}" class="btn-outline"
+                style="padding: 0.5rem; border-radius: 8px;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+        {% endfor %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var bars = document.querySelectorAll('.dynamic-progress-bar');
+                bars.forEach(function (bar) {
+                    if (bar.getAttribute('data-progress')) {
+                        bar.style.width = bar.getAttribute('data-progress') + '%';
+                    }
+                });
+            });
+        </script>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <div style="color: #cbd5e1; font-size: 3rem; margin-bottom: 1rem;"><i class="fas fa-handshake"></i></div>
+            <p>You haven't hired any lawyers yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    @media (max-width: 992px) {
+        .row {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
+{% endblock %}

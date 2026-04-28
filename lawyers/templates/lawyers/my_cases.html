@@ -1,0 +1,103 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}My Cases{% endblock %}
+{% block page_title %}My Cases{% endblock %}
+
+{% block content %}
+<div class="card-box">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="fas fa-briefcase me-2"></i>My Active Cases</h4>
+    
+    <!-- Filter/Sort Controls -->
+    <div class="btn-group">
+      <button type="button" class="btn btn-outline-secondary btn-sm active">All</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm">Hired</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm">Accepted</button>
+    </div>
+  </div>
+
+  <div class="cases-list">
+    {% for interaction in interactions %}
+    <div class="case-item p-4 mb-3 border rounded-3 shadow-sm bg-white position-relative">
+      <div class="row align-items-center">
+        <!-- Client Avatar & Info -->
+        <div class="col-md-4 mb-3 mb-md-0 d-flex align-items-center">
+            <div class="avatar-circle me-3 flex-shrink-0 bg-light text-primary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; font-weight: bold;">
+                {{ interaction.case.client.first_name|first|upper }}{{ interaction.case.client.last_name|first|upper }}
+            </div>
+            <div>
+                <h6 class="mb-1 fw-bold">{{ interaction.case.title }}</h6>
+                <p class="text-muted small mb-0">{{ interaction.case.client.get_full_name|default:interaction.case.client.email }}</p>
+                <span class="badge bg-secondary mt-1">{{ interaction.case.category.name }}</span>
+            </div>
+        </div>
+
+        <!-- Case Progress -->
+        <div class="col-md-3 mb-3 mb-md-0">
+            {% if interaction.status == 'hired' %}
+            <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted small">Progress</small>
+                <small class="fw-bold">{{ interaction.case.progress_percentage }}%</small>
+            </div>
+            <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-success dynamic-progress" role="progressbar" data-progress="{{ interaction.case.progress_percentage|default:0 }}" aria-valuenow="{{ interaction.case.progress_percentage|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">{{ interaction.case.detailed_status|default:"In Progress" }}</small>
+            {% else %}
+            <div class="text-center">
+                <span class="badge bg-info px-3 py-1 rounded-pill">Pending Hiring</span>
+                <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">Offer Accepted</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-md-5 d-flex justify-content-md-end gap-2">
+            <a href="{% url 'lawyer_case_detail' interaction.case.id %}?tab=messages" class="btn btn-outline-primary btn-sm d-flex align-items-center">
+                <i class="far fa-comments me-2"></i> Chat
+            </a>
+            <a href="{% url 'lawyer_case_detail' interaction.case.id %}" class="btn btn-primary btn-sm btn-primary-custom">
+                View Details
+            </a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-folder-open text-muted fs-1 mb-3"></i>
+        <h5 class="text-muted">No active cases yet</h5>
+        <p class="text-muted mb-0">Accepted connections and hired cases will appear here.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+    .case-item {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #e9ecef !important;
+    }
+    .case-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+    }
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #364d59, #2c3e48);
+        border: none;
+    }
+    .btn-primary-custom:hover {
+        background: linear-gradient(135deg, #2c3e48, #1a252b);
+    }
+</style>
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.dynamic-progress').forEach(function(bar) {
+        const progress = bar.getAttribute('data-progress') || 0;
+        bar.style.width = progress + '%';
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

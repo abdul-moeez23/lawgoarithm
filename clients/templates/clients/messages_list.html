@@ -1,0 +1,60 @@
+{% extends 'clients/dashboard_base.html' %}
+
+{% block title %}Messages - Lawgorithm{% endblock %}
+{% block header_title %}Conversations{% endblock %}
+
+{% block content %}
+<div class="card p-0 overflow-hidden">
+    {% if interactions %}
+    <div class="list-group">
+        {% for interaction in interactions %}
+        <a href="{% url 'case_detail' interaction.case.id %}?tab=messages" 
+           style="text-decoration: none; color: inherit; display: block; border-bottom: 1px solid var(--border-color); padding: 1.5rem; transition: background 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 50px; height: 50px; background: #e2e8f0; border-radius: 50%; overflow: hidden;">
+                        {% if interaction.lawyer.profile_picture %}
+                            <img src="{{ interaction.lawyer.profile_picture.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% else %}
+                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--primary-navy); color: white;">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.1rem;">{{ interaction.lawyer.user.get_full_name }}</h4>
+                        <p style="margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--text-gray);">
+                            <i class="fas fa-briefcase me-1"></i>
+                            <span id="case-title-{{ interaction.case.id }}">{{ interaction.case.title|truncatechars:40 }}
+                            {% if interaction.unread_count > 0 %}
+                            <span class="badge badge-hired ms-2" style="font-size: 0.8rem; background: #22c55e; color: white;" id="unread-{{ interaction.case.id }}">{{ interaction.unread_count }}</span>
+                            {% endif %}</span>
+                        </p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-{{ interaction.case.status }}" style="display: inline-block; margin-bottom: 0.5rem;">{{ interaction.case.get_status_display }}</span>
+                    <div style="font-size: 0.8rem; color: var(--text-gray);">{{ interaction.case.updated_at|timesince }} ago</div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 4rem 2rem;">
+        <i class="far fa-comments" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1.5rem; display: block;"></i>
+        <h3 style="color: var(--primary-navy);">No messages yet</h3>
+        <p style="color: var(--text-gray); max-width: 400px; margin: 0.5rem auto 1.5rem;">
+            Find and hire a lawyer to start a conversation.
+        </p>
+        <a href="{% url 'search_lawyers' %}" class="btn-primary">Find a Lawyer</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .list-group a:hover {
+        background-color: #f8fafc;
+    }
+</style>
+{% endblock %}

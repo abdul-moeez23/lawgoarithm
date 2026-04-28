@@ -1,0 +1,122 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Manage Fee Bands{% endblock %}
+
+{% block page_title %}Manage Fee Bands{% endblock %}
+
+{% block content %}
+
+
+<!-- Add Fee Band Form -->
+<div class="card-box" style="margin-bottom:2rem;">
+    <h5 style="margin-bottom:1rem; color:var(--primary-navy);">
+        <i class="fas fa-plus-circle"></i> Add New Fee Band
+    </h5>
+    <form method="POST" style="display:flex; gap:1rem; align-items:end; flex-wrap:wrap;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+
+        <div style="flex:2; min-width: 200px;">
+            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g., Junior (0-5 Years)" required>
+        </div>
+
+        <div style="flex:1; min-width: 150px;">
+            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Min Fee</label>
+            <input type="number" name="min_fee" class="form-control" placeholder="0" required>
+        </div>
+
+        <div style="flex:1; min-width: 150px;">
+            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Max Fee</label>
+            <input type="number" name="max_fee" class="form-control" placeholder="5000" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="height: 42px;">
+            <i class="fas fa-plus"></i> Add Band
+        </button>
+    </form>
+</div>
+
+<!-- Fee Bands List -->
+<div class="card-box">
+    <h5 style="margin-bottom:1.5rem; color:var(--primary-navy);">
+        <i class="fas fa-tags"></i> Fee Bands ({{ fee_bands.count }})
+    </h5>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th style="width:150px;">Min Fee</th>
+                <th style="width:150px;">Max Fee</th>
+                <th style="width:200px; text-align:right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for band in fee_bands %}
+            <tr>
+                <!-- Edit Form Inputs linked via form attribute -->
+                <td>
+                    <input type="text" form="edit-form-{{ band.id }}" name="name" value="{{ band.name }}"
+                        class="form-control" required>
+                </td>
+                <td>
+                    <input type="number" form="edit-form-{{ band.id }}" name="min_fee" value="{{ band.min_fee }}"
+                        class="form-control" required>
+                </td>
+                <td>
+                    <input type="number" form="edit-form-{{ band.id }}" name="max_fee" value="{{ band.max_fee }}"
+                        class="form-control" required>
+                </td>
+
+                <td style="text-align:right; white-space:nowrap;">
+                    <!-- The Edit Form (Hidden, but provides context for inputs) -->
+                    <form id="edit-form-{{ band.id }}" method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="band_id" value="{{ band.id }}">
+                        <button type="submit" class="btn btn-sm btn-success" title="Save Changes">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </form>
+
+                    <!-- Delete Form -->
+                    <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this fee band?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="band_id" value="{{ band.id }}">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center; color:#6b7280; padding:2rem;">
+                    No fee bands defined yet
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    /* Minimal scoped styles for table inputs to make them blend in but clearly editable */
+    table input.form-control {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.95rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        background-color: #f9fafb;
+    }
+
+    table input.form-control:focus {
+        background-color: #fff;
+        border-color: var(--primary-navy);
+        box-shadow: 0 0 0 2px rgba(13, 27, 42, 0.1);
+    }
+</style>
+
+{% endblock %}

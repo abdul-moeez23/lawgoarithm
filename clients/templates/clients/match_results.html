@@ -1,0 +1,616 @@
+{% extends 'clients/dashboard_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5" id="match-results-root" data-case-id="{{ case.id }}">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h2 class="display-5 fw-bold text-primary">Recommended lawyers</h2>
+            <p class="lead text-muted mb-1">Below, <strong>why each lawyer was predicted</strong> for your case—use it to decide who to contact.</p>
+            <a href="{% url 'my_cases' %}" class="btn btn-outline-primary mt-3">
+                <i class="fas fa-list"></i> View All My Cases
+            </a>
+        </div>
+    </div>
+
+    <!-- Case Summary -->
+    <div class="card mb-5 border-0 shadow-sm bg-light">
+        <div class="card-body">
+            <h5 class="card-title text-dark mb-3">Your Case: {{ case.title }}</h5>
+            <p class="card-text text-muted">{{ case.description|truncatewords:30 }}</p>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge bg-secondary">{{ case.category.name }}</span>
+                {% if case.subcategory %}
+                <span class="badge bg-secondary">{{ case.subcategory.name }}</span>
+                {% endif %}
+                <span class="badge bg-info text-dark">{{ case.city.name }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matched Lawyers List -->
+    <div class="row g-4">
+        {% for match in matches %}
+        <div class="col-md-6 col-lg-4">
+            <div class="lmc-card">
+
+                <!-- Score ribbon -->
+                <div class="lmc-score-ribbon">
+                    <span class="lmc-score-value">{{ match.score }}%</span>
+                    <span class="lmc-score-label">Match</span>
+                </div>
+
+                <!-- Header: avatar + name -->
+                <div class="lmc-header">
+                    <div class="lmc-avatar-wrap">
+                        {% if match.lawyer.profile_picture %}
+                        <img src="{{ match.lawyer.profile_picture.url }}" alt="{{ match.lawyer.user.get_full_name }}" class="lmc-avatar">
+                        {% else %}
+                        <div class="lmc-avatar lmc-avatar-initials">
+                            <span>{{ match.lawyer.user.first_name|first }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="lmc-online-dot"></div>
+                    </div>
+                    <div class="lmc-name-block">
+                        <h4 class="lmc-name">{{ match.lawyer.user.get_full_name }}</h4>
+                        <p class="lmc-meta">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ match.lawyer.city.name }}
+                            <span class="lmc-dot">·</span>
+                            <i class="fas fa-briefcase"></i>
+                            {{ match.lawyer.experience_years }} yrs
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="lmc-divider"></div>
+
+                <!-- Why section -->
+                <div class="lmc-why">
+                    <div class="lmc-why-title">
+                        <i class="fas fa-lightbulb"></i>
+                        Why predicted for you
+                    </div>
+                    <ul class="lmc-reasons">
+                        {% for reason in match.reasons %}
+                        <li class="lmc-reason-item">
+                            <i class="fas fa-check-circle lmc-reason-icon"></i>
+                            <span>{{ reason }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="lmc-reason-item lmc-reason-fallback">
+                            <i class="fas fa-info-circle lmc-reason-icon"></i>
+                            <span>Matched via practice area, location &amp; experience.</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Actions -->
+                <div class="lmc-actions">
+                    <a href="{% url 'lawyer_public_profile' match.lawyer.id %}" class="lmc-btn lmc-btn-ghost">
+                        <i class="fas fa-user"></i> View Profile
+                    </a>
+                    <div class="lawyer-connection-btn" data-lawyer-id="{{ match.lawyer.id }}" data-case-id="{{ case.id }}">
+                        {% if match.connection_status == 'invited' %}
+                            <button class="lmc-btn lmc-btn-sent w-100" disabled>
+                                <i class="fas fa-check"></i> Sent
+                            </button>
+                        {% elif match.connection_status == 'accepted' %}
+                            <button class="lmc-btn lmc-btn-accepted w-100" disabled>
+                                <i class="fas fa-check-circle"></i> Accepted
+                            </button>
+                        {% elif match.connection_status == 'hired' %}
+                            <button class="lmc-btn lmc-btn-hired w-100" disabled>
+                                <i class="fas fa-handshake"></i> Hired
+                            </button>
+                        {% else %}
+                            <a href="{% url 'connect_to_lawyer' case.id match.lawyer.id %}" class="lmc-btn lmc-btn-primary w-100">
+                                <i class="fas fa-paper-plane"></i> Connect
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 py-5">
+            <div class="lmc-empty">
+                <div class="lmc-empty-icon"><i class="fas fa-search"></i></div>
+                <h4 class="lmc-empty-title">No matches found yet</h4>
+                <p class="lmc-empty-sub">We've submitted your case to our general pool. Lawyers will reach out to you soon.</p>
+                <a href="{% url 'my_cases' %}" class="lmc-btn lmc-btn-primary" style="display:inline-flex;">Go to My Cases</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+/* ============================================================
+   LAWYER MATCH CARD  (lmc-*)  — Premium UI
+   ============================================================ */
+
+/* --- Google Font import (Inter) --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* --- Card shell --- */
+.lmc-card {
+    position: relative;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 28px 24px 22px;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.07), 0 1px 3px rgba(15, 23, 42, 0.05);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: transform 0.28s cubic-bezier(.22,.68,0,1.2),
+                box-shadow 0.28s ease;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    height: 100%;
+    overflow: hidden;
+}
+.lmc-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed, #2563eb);
+    border-radius: 20px 20px 0 0;
+}
+.lmc-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(79, 70, 229, 0.14), 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* --- Score ribbon (top-right badge) --- */
+.lmc-score-ribbon {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff;
+    border-radius: 12px;
+    padding: 6px 11px;
+    text-align: center;
+    line-height: 1.1;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+    min-width: 52px;
+}
+.lmc-score-value {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.lmc-score-label {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.85;
+}
+
+/* --- Header: avatar + name --- */
+.lmc-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding-right: 64px; /* keep clear of score badge */
+}
+.lmc-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+.lmc-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e0e7ff;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+}
+.lmc-avatar-initials {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #4f46e5;
+}
+.lmc-online-dot {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #10b981;
+    border: 2px solid #fff;
+}
+.lmc-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+    line-height: 1.25;
+}
+.lmc-meta {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.lmc-meta i {
+    color: #818cf8;
+    font-size: 0.7rem;
+}
+.lmc-dot {
+    color: #cbd5e1;
+}
+
+/* --- Divider --- */
+.lmc-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e2e8f0 30%, #e2e8f0 70%, transparent);
+    margin: 0 0 16px;
+}
+
+/* --- Why section --- */
+.lmc-why {
+    flex: 1;
+    background: linear-gradient(135deg, #f8f7ff 0%, #f0f4ff 100%);
+    border: 1px solid #e0e7ff;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+}
+.lmc-why-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6366f1;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.lmc-why-title i {
+    font-size: 0.8rem;
+    color: #a78bfa;
+}
+.lmc-reasons {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.lmc-reason-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #334155;
+    line-height: 1.4;
+}
+.lmc-reason-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: #22c55e;
+    font-size: 0.72rem;
+}
+.lmc-reason-fallback .lmc-reason-icon {
+    color: #94a3b8;
+}
+.lmc-reason-fallback span {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* --- Actions row --- */
+.lmc-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.lmc-actions .lawyer-connection-btn {
+    min-width: 0;
+}
+
+/* --- Buttons --- */
+.lmc-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    line-height: 1;
+}
+.lmc-btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+.lmc-btn-primary:hover {
+    background: linear-gradient(135deg, #4338ca, #4f46e5);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4);
+    transform: translateY(-1px);
+}
+.lmc-btn-ghost {
+    background: transparent;
+    color: #4f46e5;
+    border: 1.5px solid #c7d2fe;
+}
+.lmc-btn-ghost:hover {
+    background: #eef2ff;
+    border-color: #818cf8;
+    color: #4338ca;
+    transform: translateY(-1px);
+}
+.lmc-btn-sent {
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+    border: 1.5px solid #e2e8f0;
+}
+.lmc-btn-accepted {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #fff;
+    cursor: not-allowed;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+}
+.lmc-btn-hired {
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+    color: #fff;
+    cursor: not-allowed;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+}
+
+/* --- Empty state --- */
+.lmc-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 64px 24px;
+}
+.lmc-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #eef2ff, #ede9fe);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: #818cf8;
+    box-shadow: 0 6px 20px rgba(129, 140, 248, 0.18);
+}
+.lmc-empty-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+.lmc-empty-sub {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0;
+    text-align: center;
+    max-width: 400px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 400px) {
+    .lmc-actions { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Notification Toast
+   ============================================================ */
+.status-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    animation: slideIn 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+.status-toast.show { display: flex; }
+.status-toast.success { border-left: 4px solid #10b981; }
+
+@keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+</style>
+
+<!-- Status Update Notification Toast -->
+<div id="statusToast" class="status-toast">
+    <i class="fas fa-check-circle" style="font-size: 1.5rem; color: #10b981;"></i>
+    <div>
+        <strong id="toastTitle">Status Updated</strong>
+        <p id="toastMessage" style="margin: 0; font-size: 0.9rem; color: #6b7280;"></p>
+    </div>
+</div>
+
+<script>
+(function() {
+    const root = document.getElementById('match-results-root');
+    const caseId = root ? parseInt(root.dataset.caseId, 10) : 0;
+    let websocket = null;
+    let lastStatuses = {};
+    
+    // Initialize last known statuses
+    document.querySelectorAll('.lawyer-connection-btn').forEach(btn => {
+        const lawyerId = parseInt(btn.dataset.lawyerId);
+        const currentBtn = btn.querySelector('button, a');
+        if (currentBtn) {
+            if (currentBtn.classList.contains('btn-secondary')) {
+                lastStatuses[lawyerId] = 'invited';
+            } else if (currentBtn.classList.contains('btn-success')) {
+                const text = currentBtn.textContent.trim();
+                if (text.includes('Accepted')) {
+                    lastStatuses[lawyerId] = 'accepted';
+                } else if (text.includes('Hired')) {
+                    lastStatuses[lawyerId] = 'hired';
+                }
+            } else {
+                lastStatuses[lawyerId] = null;
+            }
+        }
+    });
+    
+    function updateConnectionButton(lawyerId, status) {
+        const btnContainer = document.querySelector(`.lawyer-connection-btn[data-lawyer-id="${lawyerId}"]`);
+        if (!btnContainer) return;
+        
+        const currentBtn = btnContainer.querySelector('button, a');
+        if (!currentBtn) return;
+        
+        // Don't update if status hasn't changed
+        if (lastStatuses[lawyerId] === status) return;
+        
+        const oldStatus = lastStatuses[lawyerId];
+        lastStatuses[lawyerId] = status;
+        
+        // Create new button based on status
+        let newBtn;
+        if (status === 'invited') {
+            newBtn = document.createElement('button');
+            newBtn.className = 'btn btn-secondary btn-sm w-100';
+            newBtn.disabled = true;
+            newBtn.innerHTML = '<i class="fas fa-check"></i> Request Sent';
+        } else if (status === 'accepted') {
+            newBtn = document.createElement('button');
+            newBtn.className = 'btn btn-success btn-sm w-100';
+            newBtn.disabled = true;
+            newBtn.innerHTML = '<i class="fas fa-check-circle"></i> Accepted';
+            
+            // Show notification if status changed from invited to accepted
+            if (oldStatus === 'invited') {
+                showNotification('Connection Accepted!', `A lawyer has accepted your connection request.`);
+            }
+        } else if (status === 'hired') {
+            newBtn = document.createElement('button');
+            newBtn.className = 'btn btn-success btn-sm w-100';
+            newBtn.disabled = true;
+            newBtn.innerHTML = '<i class="fas fa-handshake"></i> Hired';
+        } else {
+            newBtn = document.createElement('a');
+            newBtn.href = `/connect/${caseId}/${lawyerId}/`;
+            newBtn.className = 'btn btn-primary btn-sm w-100';
+            newBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Connect';
+        }
+        
+        // Replace button with animation
+        currentBtn.style.transition = 'opacity 0.3s';
+        currentBtn.style.opacity = '0';
+        setTimeout(() => {
+            btnContainer.innerHTML = '';
+            btnContainer.appendChild(newBtn);
+            newBtn.style.opacity = '0';
+            setTimeout(() => {
+                newBtn.style.transition = 'opacity 0.3s';
+                newBtn.style.opacity = '1';
+            }, 10);
+        }, 300);
+    }
+    
+    function showNotification(title, message) {
+        const toast = document.getElementById('statusToast');
+        document.getElementById('toastTitle').textContent = title;
+        document.getElementById('toastMessage').textContent = message;
+        toast.classList.add('show', 'success');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 5000);
+    }
+    
+    function connectWebSocket() {
+        // Determine WebSocket protocol (ws:// or wss://)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/interaction-status/`;
+        
+        websocket = new WebSocket(wsUrl);
+        
+        websocket.onopen = function() {
+            console.log('WebSocket connected');
+            // Subscribe to case updates
+            websocket.send(JSON.stringify({
+                action: 'subscribe',
+                case_id: caseId
+            }));
+        };
+        
+        websocket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'initial_status') {
+                // Update all statuses on initial connection
+                Object.keys(data.interactions).forEach(lawyerId => {
+                    updateConnectionButton(parseInt(lawyerId), data.interactions[lawyerId]);
+                });
+            } else if (data.type === 'status_update') {
+                // Update specific lawyer status
+                updateConnectionButton(data.lawyer_id, data.status);
+                if (data.message) {
+                    showNotification('Status Updated', data.message);
+                }
+            }
+        };
+        
+        websocket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+        
+        websocket.onclose = function() {
+            console.log('WebSocket disconnected, reconnecting...');
+            // Reconnect after 3 seconds
+            setTimeout(connectWebSocket, 3000);
+        };
+    }
+    
+    // Connect WebSocket on page load
+    connectWebSocket();
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        if (websocket) {
+            websocket.close();
+        }
+    });
+})();
+</script>
+{% endblock %}

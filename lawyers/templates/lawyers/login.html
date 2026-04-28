@@ -1,0 +1,310 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lawyer Sign In - Lawgorithm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2b4a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .signin-container {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 3rem 2.5rem;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #c9a961, #1a2b4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #c9a961, #d4b76e);
+            color: #1a2b4a;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.75rem;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            color: #4a5568;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid #e2dfd9;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            color: #1a1a1a;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #c9a961;
+            box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 0.5rem;
+        }
+
+        .forgot-password a {
+            color: #c9a961;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background: #1a2b4a;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary:hover {
+            background: #243a5e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26, 43, 74, 0.3);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 2rem 0;
+            color: #a0aec0;
+            font-size: 0.875rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2dfd9;
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .signup-link {
+            text-align: center;
+            color: #4a5568;
+            font-size: 0.95rem;
+        }
+
+        .signup-link a {
+            color: #c9a961;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-home a {
+            color: #718096;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .back-home a:hover {
+            color: #c9a961;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            .signin-container {
+                padding: 2rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .logo-text {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="signin-container">
+        <div class="logo">
+            <div class="logo-text">Lawgorithm</div>
+            <div class="badge">⚖️ Lawyer Portal</div>
+        </div>
+
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Sign in to your lawyer account</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if 'error' in message.tags %}error-message{% else %}success-message{% endif %}"
+                    {% if 'auto' in message.tags %}data-temporary="true"{% endif %}>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'lawyer_login' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+                <div class="forgot-password">
+                    {% comment %} <a href="#">Forgot password?</a> {% endcomment %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Sign In to Dashboard</button>
+        </form>
+
+        <div class="divider">
+            <span>Or sign in with</span>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <a href="{% provider_login_url 'google' next='/users/role-dispatch/?source=lawyer' %}" style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #e5e7eb; background-color: #fff; color: #374151; font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500; text-decoration: none; transition: all 0.3s ease;">
+                <i class="fab fa-google"></i>
+                <span>Continue with Google</span>
+            </a>
+        </div>
+
+        <div class="signup-link">
+            Don't have an account? <a href="{% url 'lawyer_signup' %}">Register as a Lawyer</a>
+        </div>
+
+        <div class="back-home">
+            <a href="{% url 'index' %}">← Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const messages = document.querySelectorAll('.error-message, .success-message');
+            messages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+                    msg.style.opacity = "0";
+                    msg.style.transform = "translateY(-10px)";
+                    setTimeout(() => msg.remove(), 500);
+                }, 5000); // 5 seconds timer
+            });
+        });
+    </script>
+</body>
+
+</html>

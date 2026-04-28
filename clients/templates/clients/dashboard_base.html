@@ -1,0 +1,743 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Client Dashboard - Lawgorithm{% endblock %}</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-navy: #0f172a;
+            --secondary-navy: #1e293b;
+            --accent-gold: #c9a961;
+            --bg-light: #f1f5f9;
+            --white: #ffffff;
+            --text-dark: #334155;
+            --text-gray: #64748b;
+            --border-color: #e2e8f0;
+            --sidebar-width: 280px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary-navy);
+            color: var(--white);
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+            z-index: 100;
+        }
+
+        .brand-logo {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            list-style: none;
+            flex: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+        }
+
+        .nav-link.active {
+            background-color: var(--accent-gold);
+            color: var(--primary-navy);
+            font-weight: 600;
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .user-profile-sm {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-navy);
+            font-weight: 700;
+        }
+
+        .user-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.1rem;
+        }
+
+        .user-info p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.75rem;
+            color: var(--primary-navy);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-navy);
+            color: var(--white);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background-color: #243a5e;
+        }
+        
+        .btn-outline {
+            border: 2px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-outline:hover {
+            border-color: var(--primary-navy);
+            color: var(--primary-navy);
+        }
+
+        /* Components */
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-draft { background: #e2e8f0; color: #475569; }
+        .badge-submitted { background: #dbeafe; color: #1e40af; }
+        .badge-matched { background: #fef3c7; color: #92400e; }
+        .badge-hired { background: #dcfce7; color: #166534; }
+        .badge-closed { background: #fee2e2; color: #991b1b; }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; padding: 2rem 1rem; }
+            .nav-link span, .brand-logo span, .user-info { display: none; }
+            .main-content { margin-left: 80px; padding: 1.5rem; }
+            .nav-link { justify-content: center; }
+        }
+
+        /* Notification Dropdown */
+        .header-actions {
+            position: relative;
+        }
+
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 380px;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            margin-top: 1rem;
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+            animation: fadeInScale 0.2s ease-out;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .notif-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .notif-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+            margin: 0;
+        }
+
+        .notif-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notif-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s;
+        }
+
+        .notif-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .notif-item.unread {
+            background-color: #f0f9ff;
+        }
+
+        .notif-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-navy);
+            flex-shrink: 0;
+        }
+
+        .notif-item.unread .notif-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .notif-info {
+            flex: 1;
+        }
+
+        .notif-info h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .notif-info p {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .notif-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .notif-empty {
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: var(--text-gray);
+        }
+
+        .notif-badge {
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            border: 2px solid white;
+        }
+        
+        #bell-container {
+            position: relative;
+        }
+
+        /* Toast Notification Styling (Match Lawyer Dashboard "Toastr" Style) */
+        .toast-container {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .toast-msg {
+            background: #1e293b;
+            color: white;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            border-left: 4px solid var(--accent-gold);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            min-width: 300px;
+            max-width: 380px;
+            animation: slideInToast 0.3s ease-out;
+            pointer-events: auto;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.3s;
+        }
+
+        .toast-msg:hover {
+            transform: translateX(-5px);
+        }
+
+        @keyframes slideInToast {
+            from { transform: translateX(110%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-msg.fade-out {
+            animation: fadeOut 0.3s ease-in forwards;
+        }
+
+        @keyframes fadeOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .msg-alert { color: inherit; }
+        .msg-alert-error { background: #fee2e2; }
+        .msg-alert-success { background: #dcfce7; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <a href="{% url 'client_dashboard' %}" class="brand-logo">
+            <i class="fas fa-scale-balanced"></i>
+            <span>Lawgorithm</span>
+        </a>
+
+        <ul class="nav-links">
+            <li class="nav-item">
+                <a href="{% url 'client_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'client_dashboard' %}active{% endif %}">
+                    <i class="fas fa-border-all"></i>
+                    <span>Overview</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'my_cases' %}" class="nav-link {% if request.resolver_match.url_name == 'my_cases' %}active{% endif %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>My Cases</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'hired_lawyers' %}" class="nav-link {% if request.resolver_match.url_name == 'hired_lawyers' %}active{% endif %}">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Hired Lawyers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'search_lawyers' %}" class="nav-link {% if request.resolver_match.url_name == 'search_lawyers' %}active{% endif %}">
+                    <i class="fas fa-search"></i>
+                    <span>Find Lawyers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'client_profile' %}" class="nav-link {% if request.resolver_match.url_name == 'client_profile' %}active{% endif %}">
+                    <i class="fas fa-user-gear"></i>
+                    <span>Profile & Settings</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="user-profile-sm">
+            <div class="avatar">
+                {{ user.username|make_list|first|upper }}
+            </div>
+            <div class="user-info">
+                <h4>{{ user.first_name|default:user.username }}</h4>
+                <p>Client Account</p>
+                <a href="{% url 'logout' %}" style="color: #94a3b8; font-size: 0.8rem; text-decoration: none;">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="page-title">
+                <h1>{% block header_title %}Overview{% endblock %}</h1>
+            </div>
+            <div class="header-actions">
+                <div id="bell-container">
+                    <button class="btn-outline" id="notif-toggle">
+                        <i class="far fa-bell"></i>
+                        {% if unread_notification_count > 0 %}
+                        <span class="notif-badge">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </button>
+                    
+                    <div class="notification-dropdown" id="notif-dropdown">
+                        <div class="notif-header">
+                            <h3>Notifications</h3>
+                            <button class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" id="mark-all-read">Mark all as read</button>
+                        </div>
+                        <div class="notif-list" id="notif-list-body">
+                            {% if latest_notifications %}
+                                {% for notif in latest_notifications %}
+                                <a href="{% if notif.link %}{{ notif.link }}{% else %}#{% endif %}" class="notif-item {% if not notif.is_read %}unread{% endif %}" data-id="{{ notif.id }}">
+                                    <div class="notif-icon">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div class="notif-info">
+                                        <h4>{{ notif.title }}</h4>
+                                        <p>{{ notif.message|truncatechars:100 }}</p>
+                                        <span class="notif-time">{{ notif.created_at|timesince }} ago</span>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                                <div class="notif-empty">
+                                    <i class="fas fa-bell-slash mb-2" style="font-size: 2rem; opacity: 0.2;"></i>
+                                    <p>No notifications yet</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% block actions %}{% endblock %}
+            </div>
+        </header>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="card msg-alert {% if 'error' in message.tags %}msg-alert-error{% else %}msg-alert-success{% endif %}" style="display: flex; justify-content: space-between; align-items: center; transition: opacity 0.5s ease, transform 0.5s ease;">
+                    <div style="flex: 1;">{{ message }}</div>
+                    <button type="button" onclick="this.parentElement.style.opacity='0'; setTimeout(() => this.parentElement.remove(), 500);" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: inherit; opacity: 0.6; cursor: pointer; padding: 0 0 0 1rem; margin: -0.5rem 0;">&times;</button>
+                </div>
+            {% endfor %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const alerts = document.querySelectorAll('.msg-alert');
+                    alerts.forEach(alert => {
+                        setTimeout(() => {
+                            if (alert.parentElement) {
+                                alert.style.opacity = '0';
+                                alert.style.transform = 'translateY(-10px)';
+                                setTimeout(() => alert.remove(), 500);
+                            }
+                        }, 5000);
+                    });
+                });
+            </script>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        function showToast(title, message, iconType = 'bullhorn', link = null) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            
+            const icon = iconType === 'comment' ? 'fa-comment' : 'fa-bullhorn';
+            
+            toast.innerHTML = `
+                <div style="background:var(--accent-gold);color:var(--primary-navy);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas ${icon}" style="font-size:0.85rem;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight:700;font-size:0.95rem;margin-bottom:2px;color:white;">${title}</div>
+                    <div style="font-size:0.85rem;color:#94a3b8;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${message}</div>
+                </div>
+                <button onclick="event.stopPropagation(); this.parentElement.remove()" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0;font-size:1.2rem;line-height:1;">&times;</button>
+            `;
+
+            if (link) {
+                toast.onclick = () => window.location.href = link;
+            } else {
+                toast.onclick = () => toast.classList.add('fade-out');
+            }
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(110%)';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 6000);
+        }
+
+        (function() {
+            const notifToggle = document.getElementById('notif-toggle');
+            const notifDropdown = document.getElementById('notif-dropdown');
+            
+            if (notifToggle && notifDropdown) {
+                notifToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    notifDropdown.classList.toggle('show');
+                });
+
+                document.addEventListener('click', () => {
+                    notifDropdown.classList.remove('show');
+                });
+
+                notifDropdown.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            }
+
+            // Real-time WebSocket Logic handled in script below
+        })();
+    </script>
+
+    {% if user.is_authenticated and user.role == 'client' %}
+    <script>
+            // Global Audio Context for notifications
+            let globalAudioCtx = null;
+            const initGlobalAudio = async () => {
+                if (!globalAudioCtx) {
+                    globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (globalAudioCtx.state === 'suspended') {
+                    await globalAudioCtx.resume();
+                }
+            };
+            document.addEventListener('click', initGlobalAudio);
+            document.addEventListener('keydown', initGlobalAudio);
+
+            async function playGlobalNotificationSound() {
+                try {
+                    if (!globalAudioCtx) {
+                        globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (globalAudioCtx.state === 'suspended') {
+                        await globalAudioCtx.resume();
+                    }
+                    if (globalAudioCtx.state === 'running') {
+                        const now = globalAudioCtx.currentTime;
+                        const osc = globalAudioCtx.createOscillator();
+                        const gain = globalAudioCtx.createGain();
+                        
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(880, now); // High pitch (A5)
+                        osc.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+                        
+                        gain.gain.setValueAtTime(0, now);
+                        gain.gain.linearRampToValueAtTime(0.3, now + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                        
+                        osc.connect(gain);
+                        gain.connect(globalAudioCtx.destination);
+                        
+                        osc.start(now);
+                        osc.stop(now + 0.25);
+                    }
+                } catch(e) {
+                    console.log('Global notification failed', e);
+                }
+            }
+
+            // Unified Toast Function for Chat
+            function showChatToast(senderName, message, caseId) {
+                const link = `/case/${caseId}/?tab=messages`;
+                showToast(`New message from ${senderName}`, message, 'comment', link);
+            }
+
+            function connectNotifications() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/interaction-status/`;
+                const socket = new WebSocket(wsUrl);
+
+                socket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    console.log("Global Notification Received:", data);
+                    
+                    if (data.type === 'notification_update') {
+                        console.log("New notification:", data.message);
+                        
+                        // Show a toast or update badge
+                        const badge = document.querySelector('.notif-badge');
+                        if (badge) badge.style.display = 'flex';
+
+                        // If it's a progress update, update corresponding elements if they exist on the current page
+                        if (data.is_progress_update) {
+                            const caseId = data.case_id;
+                            const statusText = document.getElementById(`case-${caseId}-status-text`);
+                            const percentText = document.getElementById(`case-${caseId}-percentage-text`);
+                            const barFill = document.getElementById(`case-${caseId}-bar-fill`);
+
+                            if (statusText) statusText.textContent = data.detailed_status;
+                            if (percentText) percentText.textContent = data.progress_percentage + '%';
+                            if (barFill) barFill.style.width = data.progress_percentage + '%';
+                            
+                            // Show premium notification
+                            showToast("Progress Update", data.message, 'bullhorn', `/case/${caseId}/`);
+                        }
+                    } else if (data.type === 'chat_message') {
+                        // Play Sound only if not muted and not sent by the current user
+                        const isMutedGlobally = localStorage.getItem('globalChatMuted') === 'true';
+                        if (!isMutedGlobally && String(data.sender_id) !== "{{ request.user.id }}") {
+                            playGlobalNotificationSound();
+                            // Show toast notification on all pages
+                            showChatToast(data.sender_name, data.message, data.case_id);
+                        }
+                        
+                        // Update green badge if it exists
+                        const badgeElem = document.getElementById(`unread-${data.case_id}`);
+                        if (badgeElem) {
+                            badgeElem.style.display = 'inline-block';
+                            let count = parseInt(badgeElem.innerText) || 0;
+                            badgeElem.innerText = count + 1;
+                        } else if (document.location.pathname.includes('/messages/')) {
+                            const titleElem = document.querySelector(`#case-title-${data.case_id}`);
+                            if (titleElem) {
+                                titleElem.innerHTML += ` <span class="badge badge-hired ms-2" style="font-size: 0.8rem; background: #22c55e; color: white;" id="unread-${data.case_id}">1</span>`;
+                            }
+                        }
+                        
+                        // Optional toast for chat messages if not in chat page
+                        if (!document.location.pathname.includes(`/case/${data.case_id}/`)) {
+                            showToast(`New message from ${data.sender_name}: ${data.message}`);
+                        }
+                    }
+                };
+
+                socket.onclose = function() {
+                    console.log('Notification socket closed, reconnecting...');
+                    setTimeout(connectNotifications, 3000);
+                };
+            }
+            connectNotifications();
+    </script>
+    {% endif %}
+
+    <script>
+        (function() {
+            document.querySelectorAll('.notif-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    const id = this.dataset.id;
+                    if (id) {
+                        fetch(`/dashboard/notifications/read/${id}/`);
+                    }
+                });
+            });
+
+            const markAllReadBtn = document.getElementById('mark-all-read');
+            if (markAllReadBtn) {
+                 markAllReadBtn.addEventListener('click', function() {
+                      fetch(`/dashboard/notifications/mark-all-read/`).then(() => window.location.reload());
+                 });
+            }
+        })();
+    </script>
+</body>
+</html>

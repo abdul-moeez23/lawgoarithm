@@ -1,0 +1,1609 @@
+{% extends 'clients/dashboard_base.html' %}
+
+{% block title %}Case #{{ case.id }} - Lawgorithm{% endblock %}
+{% block header_title %}{{ case.title }}{% endblock %}
+
+{% block content %}
+<style>
+    .case-nav {
+        display: flex;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
+        gap: 2rem;
+    }
+
+    .case-tab {
+        padding: 1rem 0;
+        color: var(--text-gray);
+        text-decoration: none;
+        font-weight: 600;
+        position: relative;
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1rem;
+    }
+
+    .case-tab.active {
+        color: var(--primary-navy);
+    }
+
+    .case-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--accent-gold);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+
+    /* Chat/Message Styles */
+    .message-container {
+        height: calc(100vh - 380px);
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        overflow: hidden;
+        transition: height 0.3s ease;
+    }
+
+    .message-header {
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: #fff;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .message-header .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background: #fbbf24;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #94a3b8;
+        /* Default offline */
+    }
+
+    .status-dot.online {
+        background: #10b981;
+    }
+
+    .status-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .status-label.online {
+        color: #10b981;
+    }
+
+    .message-list {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: #fdfdfd;
+    }
+
+    .message-bubble {
+        max-width: 70%;
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        position: relative;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .message-bubble.sent {
+        align-self: flex-end;
+        background: #0f172a;
+        color: white;
+        border-radius: 18px 18px 0 18px !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .message-bubble.received {
+        align-self: flex-start;
+        background: #ffffff;
+        color: #1e293b;
+        border-radius: 18px 18px 18px 0 !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    .message-bubble {
+        position: relative;
+        padding-right: 2.5rem;
+        /* Space for the menu button */
+        transition: all 0.3s ease;
+    }
+
+    .msg-action-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: none;
+        border: none;
+        color: inherit;
+        opacity: 0;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 0.8rem;
+        transition: opacity 0.2s;
+    }
+
+    .message-bubble:hover .msg-action-btn {
+        opacity: 0.7;
+    }
+
+    .msg-action-btn:hover {
+        opacity: 1 !important;
+    }
+
+    .msg-dropdown {
+        display: none;
+        position: absolute;
+        bottom: 28px;
+        right: 0;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        min-width: 195px;
+        z-index: 1000;
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        animation: dropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transform-origin: bottom right;
+    }
+
+    .msg-dropdown.show-down {
+        bottom: auto;
+        top: 28px;
+        transform-origin: top right;
+    }
+
+    .message-bubble.received .msg-dropdown {
+        right: auto;
+        left: 0;
+        transform-origin: bottom left;
+    }
+
+    .message-bubble.received .msg-dropdown.show-down {
+        transform-origin: top left;
+    }
+
+    .msg-dropdown.show {
+        display: block;
+    }
+
+    @keyframes dropIn {
+        from { opacity: 0; transform: translateY(8px) scale(0.95); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .msg-drop-item {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: none;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+    }
+
+    .msg-drop-item:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .msg-drop-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+
+    .msg-drop-danger {
+        color: #ef4444 !important;
+    }
+
+    .msg-drop-danger .msg-drop-icon {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .msg-drop-danger:hover {
+        background: #fef2f2;
+    }
+
+    .msg-drop-danger:hover .msg-drop-icon {
+        background: #fecaca;
+    }
+
+    .msg-drop-divider {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 2px 0;
+    }
+
+    .message-meta {
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        opacity: 0.8;
+        display: block;
+        text-align: right;
+    }
+
+    .message-input-area {
+        padding: 1rem;
+        background: white;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .message-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 2rem;
+        font-family: inherit;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .message-input:focus {
+        border-color: var(--accent-gold);
+    }
+
+    .send-btn {
+        background: var(--primary-navy);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .send-btn:hover {
+        background: #d4b76e;
+        transform: scale(1.05);
+    }
+
+    .text-success {
+        color: #16a34a;
+    }
+
+    .text-muted {
+        color: #6b7280;
+    }
+</style>
+
+<div class="case-nav custom-tabs-container">
+    <button class="case-tab active" id="details-tab" onclick="switchTab('details', event)">Case Details</button>
+    <button class="case-tab" id="matches-tab" onclick="switchTab('matches', event)">Lawyer Matches ({{ interactions.count }})</button>
+    <button class="case-tab" id="documents-tab" onclick="switchTab('documents', event)">Documents</button>
+    <button class="case-tab" id="messages-tab" onclick="switchTab('messages', event)">Messages</button>
+    <button class="case-tab" id="appointments-tab" onclick="switchTab('appointments', event)">Appointments</button>
+    <button class="case-tab" id="review-tab" onclick="switchTab('review', event)">Review</button>
+</div>
+
+<!-- DETAILS TAB -->
+<div id="details" class="tab-content active">
+    {% if case.status == 'hired' or case.status == 'matched' %}
+    <div class="card"
+        style="margin-bottom: 2rem; border-left: 4px solid var(--accent-gold); background: linear-gradient(to right, #ffffff, #fcfaf5);">
+        <div style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: center; justify-content: space-between;">
+            <div style="flex: 1; min-width: 300px;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div
+                        style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);">
+                    </div>
+                    <span
+                        style="font-weight: 700; color: var(--primary-navy); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">Live
+                        Case Progress</span>
+                </div>
+
+                <div
+                    style="margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <h3 id="progress-status-text" style="margin: 0; color: var(--primary-navy); font-size: 1.5rem;">
+                        {{ case.detailed_status|default:"Legal Review in Progress" }}
+                    </h3>
+                    <span id="progress-percentage-text"
+                        style="font-weight: 700; color: var(--accent-gold); font-size: 1.25rem;">
+                        {{ case.progress_percentage }}%
+                    </span>
+                </div>
+
+                <div
+                    style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 1rem;">
+                    <div id="progress-bar-fill" data-progress="{{ case.progress_percentage|default:0 }}"
+                        style="height: 100%; background: var(--accent-gold); transition: width 0.5s ease-in-out;">
+                    </div>
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var bar = document.getElementById('progress-bar-fill');
+                        if (bar && bar.getAttribute('data-progress')) {
+                            bar.style.width = bar.getAttribute('data-progress') + '%';
+                        }
+                    });
+                </script>
+
+                <p style="font-size: 0.9rem; color: var(--text-gray); margin: 0;">
+                    <i class="far fa-clock me-1"></i> <span id="last-updated-text">Last updated by your lawyer
+                        {{ case.updated_at|timesince }} ago
+                    </span>
+                </p>
+            </div>
+
+            <div id="right-info-container" style="display: flex; gap: 1.5rem;">
+                <div id="next-hearing-container" class="{% if not case.next_hearing_date %}d-none{% endif %}"
+                    style="background: white; padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    <span
+                        style="display: block; font-size: 0.7rem; color: var(--text-gray); text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Next
+                        Hearing</span>
+                    <div id="next-hearing-date" style="font-size: 1.1rem; font-weight: 700; color: #ef4444;">
+                        <i class="fas fa-gavel me-1"></i> {{ case.next_hearing_date|date:"d M Y" }}
+                    </div>
+                </div>
+
+                <div
+                    style="background: white; padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <span
+                        style="display: block; font-size: 0.7rem; color: var(--text-gray); text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Case
+                        Status</span>
+                    <span id="case-status-badge" class="badge badge-{{ case.status }}"
+                        style="font-size: 0.9rem; padding: 0.5rem 1rem;">{{ case.get_status_display }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="detail-grid">
+        <div class="card">
+            <h3 style="margin-bottom: 1rem;">Description</h3>
+            <p style="line-height: 1.6; color: var(--text-dark);">
+                {{ case.description }}
+            </p>
+        </div>
+        <div>
+            <div class="card">
+                <h4 style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-gray);">CASE INFO</h4>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: var(--text-gray);">Category</div>
+                    <div style="font-weight: 600;">{{ case.category.name }}</div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: var(--text-gray);">Court</div>
+                    <div style="font-weight: 600;">{{ case.court_level.name|default:"Not specified" }}</div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: var(--text-gray);">Fee Band (Budget)</div>
+                    <div style="font-weight: 600; color: var(--accent-gold);">{{ case.fee_band.name|default:"Flexible" }}</div>
+                </div>
+                {% if active_interaction.quoted_fee %}
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: var(--text-gray);">Negotiated Fee</div>
+                    <div style="font-weight: 700; color: #16a34a;">Rs. {{ active_interaction.quoted_fee }}</div>
+                </div>
+                {% endif %}
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: var(--text-gray);">Status</div>
+                    <span class="badge badge-{{ case.status }}">{{ case.get_status_display }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REVIEW TAB -->
+<div id="review" class="tab-content">
+    <div id="review-section" class="card" style="margin-bottom: 2rem; border: 1px solid #e2e8f0;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary-navy);">Rate Your Experience</h3>
+
+        {% if case.status != 'closed' %}
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem 1.25rem; border-radius: 8px; color: var(--text-gray);">
+            <i class="fas fa-info-circle me-2"></i>
+            Review will be available when this case is marked <strong>Closed</strong>.
+        </div>
+        {% elif not active_interaction %}
+        <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 1rem 1.25rem; border-radius: 8px; color: #b91c1c;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No hired interaction found for this case, so a review cannot be submitted.
+        </div>
+        {% elif active_interaction.rating %}
+        <!-- READ ONLY REVIEW -->
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px;">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div class="stars" style="color: #f59e0b; font-size: 1.25rem;">
+                    {% with ''|center:5 as range %}
+                    {% for _ in range %}
+                    {% if forloop.counter <= active_interaction.rating.stars %} <i class="fas fa-star"></i>
+                        {% else %}
+                        <i class="far fa-star"></i>
+                        {% endif %}
+                        {% endfor %}
+                        {% endwith %}
+                </div>
+                <span style="font-weight: 600; font-size: 1.1rem;">{{ active_interaction.rating.stars }}.0</span>
+            </div>
+
+            {% if active_interaction.rating.review %}
+            <div style="position: relative; padding-left: 1.5rem; margin-bottom: 1rem;">
+                <i class="fas fa-quote-left" style="position: absolute; left: 0; top: 0; color: #cbd5e1;"></i>
+                <p style="font-style: italic; color: var(--text-dark); margin: 0;">
+                    {{ active_interaction.rating.review }}
+                </p>
+            </div>
+            {% endif %}
+
+            <div style="font-size: 0.85rem; color: var(--text-gray); border-top: 1px solid #e2e8f0; padding-top: 0.75rem;">
+                Submitted on {{ active_interaction.rating.created_at|date:"M d, Y" }}
+            </div>
+        </div>
+        {% else %}
+        <!-- SUBMIT REVIEW FORM -->
+        <form action="{% url 'submit_review' active_interaction.id %}" method="POST">
+            {% csrf_token %}
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">
+                    How would you rate {{ active_interaction.lawyer.user.get_full_name }}?
+                </label>
+
+                <div class="star-rating" style="display: inline-flex; flex-direction: row-reverse; gap: 0.5rem;">
+                    <input type="radio" id="star5" name="stars" value="5" required style="display: none;"><label for="star5" style="font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</label>
+                    <input type="radio" id="star4" name="stars" value="4" style="display: none;"><label for="star4" style="font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</label>
+                    <input type="radio" id="star3" name="stars" value="3" style="display: none;"><label for="star3" style="font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</label>
+                    <input type="radio" id="star2" name="stars" value="2" style="display: none;"><label for="star2" style="font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</label>
+                    <input type="radio" id="star1" name="stars" value="1" style="display: none;"><label for="star1" style="font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</label>
+                </div>
+                <style>
+                    .star-rating input:checked~label,
+                    .star-rating label:hover,
+                    .star-rating label:hover~label {
+                        color: #f59e0b !important;
+                    }
+                </style>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="review" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-dark);">
+                    Write a comment (optional)
+                </label>
+                <textarea name="review" id="review" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;" placeholder="Share details of your experience..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" style="padding: 0.75rem 2rem;">
+                <i class="fas fa-paper-plane me-2"></i> Submit Review
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- MATCHES TAB -->
+<div id="matches" class="tab-content">
+    <div class="card">
+        <h3>Responses from Lawyers</h3>
+        <br>
+        {% for interaction in interactions %}
+        <div class="interaction-item" data-lawyer-id="{{ interaction.lawyer.id }}"
+            data-interaction-id="{{ interaction.id }}"
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem 0;">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div style="width: 50px; height: 50px; background: #e2e8f0; border-radius: 50%; overflow: hidden;">
+                    {% if interaction.lawyer.profile_picture %}
+                    <img src="{{ interaction.lawyer.profile_picture.url }}"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                    {% endif %}
+                </div>
+                <div>
+                    <h4 style="margin: 0;">{{ interaction.lawyer.user.first_name }} {{ interaction.lawyer.user.last_name }}</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-gray);">
+                        {{ interaction.lawyer.experience_years }} years exp • {{ interaction.lawyer.city.name }}
+                        {% if interaction.quoted_fee %}
+                        • <span style="color: #16a34a; font-weight: 700;">Rs. {{ interaction.quoted_fee }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="interaction-status-container" style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="badge badge-{{ interaction.status }} status-badge"
+                    data-status="{{ interaction.status }}">{{ interaction.get_status_display }}</span>
+
+                {% if interaction.status == 'accepted' and interaction.quoted_fee %}
+                <a href="{% url 'hire_lawyer' case.id interaction.lawyer.id %}" class="btn-primary"
+                    style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #16a34a; border-color: #16a34a;">
+                    <i class="fas fa-handshake"></i> Hire Lawyer
+                </a>
+                {% endif %}
+
+                <a href="{% url 'lawyer_public_profile' interaction.lawyer.id %}" class="btn-outline"
+                    style="padding: 0.5rem 1rem; font-size: 0.85rem; text-decoration: none; color: inherit; display: inline-block;">View
+                    Profile</a>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-gray);">No lawyers have responded yet.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- DOCUMENTS TAB -->
+<div id="documents" class="tab-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3>Case Documents</h3>
+            <form id="client-document-upload-form" method="POST" enctype="multipart/form-data"
+                style="display: flex; gap: 0.5rem; align-items: center;">
+                {% csrf_token %}
+                <input type="file" name="document" required style="font-size: 0.9rem;">
+                <button type="submit" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;"
+                    id="client-upload-btn">
+                    <span class="btn-text">Upload</span>
+                    <span class="spinner-border spinner-border-sm d-none"
+                        style="width: 1rem; height: 1rem; border-width: 0.15em;"></span>
+                </button>
+            </form>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;"
+            id="document-list-container">
+            {% for doc in documents %}
+            <div id="doc-{{ doc.id }}"
+                style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; position: relative; background: #fff;">
+                <div
+                    style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items: flex-start;">
+                    <i class="fas fa-file-pdf" style="font-size: 1.5rem; color: #ef4444;"></i>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        {% if doc.uploaded_by == request.user %}
+                        <span class="badge"
+                            style="background:#f3f4f6; color:#1f2937; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">You</span>
+                        {% else %}
+                        <span class="badge"
+                            style="background:#e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">Lawyer</span>
+                        {% endif %}
+
+                        <div class="dropdown doc-dropdown" style="position: relative;">
+                            <button class="btn btn-link text-muted p-0 doc-dropdown-toggle" type="button"
+                                style="text-decoration: none; border: none; background: none; cursor: pointer;">
+                                <i class="fas fa-ellipsis-v" style="font-size: 0.8rem;"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border doc-dropdown-menu"
+                                style="display: none; position: absolute; right: 0; background: white; z-index: 100; min-width: 150px; padding: 0.5rem 0; border-radius: 4px; list-style: none;">
+                                <li><a class="dropdown-item doc-dropdown-item"
+                                        href="{% url 'client_delete_document' doc.id 'me' %}"
+                                        style="display: block; padding: 0.25rem 1rem; color: #334155; text-decoration: none; font-size: 0.85rem;">
+                                        <i class="fas fa-eye-slash me-2"></i> Delete for me
+                                    </a></li>
+                                {% if doc.uploaded_by == request.user %}
+                                <li>
+                                    <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #e2e8f0;">
+                                </li>
+                                <li><a class="dropdown-item text-danger doc-dropdown-item"
+                                        href="{% url 'client_delete_document' doc.id 'everyone' %}"
+                                        style="display: block; padding: 0.25rem 1rem; color: #dc2626; text-decoration: none; font-size: 0.85rem;">
+                                        <i class="fas fa-trash-alt me-2"></i> Delete for everyone
+                                    </a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="font-weight: 500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem;"
+                    title="{{ doc.title|default:doc.file.name }}">
+                    {{ doc.title|default:doc.file.name }}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-gray);">{{ doc.uploaded_at|date:"M d, Y" }}</div>
+                <a href="{{ doc.file.url }}" target="_blank"
+                    style="color: var(--primary-navy); font-size: 0.85rem; font-weight: 600; display: block; margin-top: 0.5rem; text-decoration: none;">Download</a>
+            </div>
+            {% empty %}
+            <p>No documents uploaded.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- MESSAGES TAB -->
+<div id="messages" class="tab-content">
+    <div class="card" style="padding:0; overflow:hidden;">
+        {% if active_interaction %}
+        <div class="message-container">
+            <div class="message-header">
+                <div class="avatar-circle">
+                    {{ active_interaction.lawyer.user.first_name|first|upper }}
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <div
+                        style="font-weight: 700; font-size: 1.1rem; color: #111827; line-height: 1.2; margin-bottom: 2px;">
+                        {{ active_interaction.lawyer.user.first_name }} {{ active_interaction.lawyer.user.last_name }}
+                    </div>
+                    <div id="user-status-container" style="display: flex; align-items: center; gap: 6px;">
+                        <div id="status-dot"
+                            class="status-dot {% if active_interaction.lawyer.user.is_online %}online{% endif %}"></div>
+                        <span id="status-label"
+                            class="status-label {% if active_interaction.lawyer.user.is_online %}online{% endif %}">
+                            {% if active_interaction.lawyer.user.is_online %}Online{% else %}Offline{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Chat Menu Dropdown -->
+                <div class="dropdown chat-options-dropdown" style="margin-left: auto; position: relative;">
+                    <button class="btn btn-link text-muted p-2 header-dropdown-toggle" type="button" 
+                        style="text-decoration: none; border: none; background: none; cursor: pointer;">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 header-dropdown-menu" 
+                        style="border-radius: 12px; min-width: 180px; padding: 6px; right: 14px;">
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-3 py-2" onclick="toggleSound()">
+                                <span class="dropdown-icon-wrapper" style="width: 28px; display: flex; justify-content: center;">
+                                    <i class="fas fa-bell-slash" id="soundIconDropdown" style="font-size: 0.9rem; color: #64748b;"></i>
+                                </span>
+                                <span id="soundTextDropdown" style="font-size: 0.9rem; font-weight: 500;">Mute Chat</span>
+                            </button>
+                        </li>
+                        <li class="dropdown-divider-li" style="height: 1px; background: #f1f5f9; margin: 4px 8px;"></li>
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-3 py-2 text-danger" onclick="handleClearChat()" style="color: #ef4444 !important;">
+                                <span class="dropdown-icon-wrapper" style="width: 28px; display: flex; justify-content: center;">
+                                    <i class="fas fa-broom" style="font-size: 0.9rem; color: #ef4444;"></i>
+                                </span>
+                                <span style="font-size: 0.9rem; font-weight: 500;">Clear Chat</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Sound Toggle (Visible) -->
+                <button id="soundToggleBtn" onclick="toggleSound()" class="btn btn-sm d-none d-md-flex align-items-center gap-2 ms-2" style="border: 1px solid #e2e8f0; border-radius: 20px; padding: 0.35rem 0.75rem; background: white; cursor: pointer; color: #64748b;">
+                    <i class="fas fa-bell" id="soundIcon" style="color: #10b981;"></i>
+                    <span id="soundText" style="font-size: 0.85rem; font-weight: 500;">Sound ON</span>
+                </button>
+            </div>
+
+            <div class="message-list" id="chat-box">
+                {% for msg in chat_messages %}
+                <div class="message-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}"
+                    id="msg-{{ msg.id }}" data-created-at="{{ msg.created_at|date:'c' }}">
+                    <div class="message-content">
+                        {{ msg.content }}
+                        {% if msg.attachment %}
+                        <div class="message-attachment"
+                            style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.8rem;">
+                            <i class="fas fa-paperclip"></i> <a href="{{ msg.attachment.url }}" target="_blank"
+                                onclick="trackDownload('{{ msg.id }}')" style="color: inherit;">
+                                {{ msg.attachment.name }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <button class="msg-action-btn" onclick="toggleMsgDropdown(event, '{{ msg.id }}')">
+                        <i class="fas fa-chevron-down" style="font-size:0.65rem;"></i>
+                    </button>
+
+                    <div class="msg-dropdown" id="msg-dropdown-{{ msg.id }}">
+                        <button class="msg-drop-item" onclick="handleDeleteMessage('{{ msg.id }}', 'me')">
+                            <span class="msg-drop-icon" style="color:#64748b;"><i class="fas fa-eye-slash"></i></span>
+                            Delete for me
+                        </button>
+                        {% if msg.sender == request.user %}
+                        <div class="msg-drop-divider"></div>
+                        <button class="msg-drop-item msg-drop-danger" onclick="handleDeleteMessage('{{ msg.id }}', 'everyone')">
+                            <span class="msg-drop-icon"><i class="fas fa-trash-alt"></i></span>
+                            Delete for everyone
+                        </button>
+                        {% endif %}
+                    </div>
+                    <span class="message-meta">{{ msg.created_at|time:"g:i A" }}</span>
+                </div>
+                {% empty %}
+                <div class="no-messages">
+                    <i class="far fa-comments fs-1 mb-3"></i>
+                    <p>No messages yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <form method="POST" action="{% url 'client_send_message' case.id %}" class="message-input-area">
+                {% csrf_token %}
+                <input type="text" name="content" class="message-input" placeholder="Type a message..." required
+                    autocomplete="off">
+                <button type="submit" class="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div
+            style="padding: 3rem 1rem; text-align: center; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+            <div
+                style="width: 80px; height: 80px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                <i class="fas fa-lock" style="font-size: 2rem; color: #94a3b8;"></i>
+            </div>
+            <h4 style="color: #1e293b; margin-bottom: 0.5rem;">Messaging Locked</h4>
+            <p style="color: #64748b; max-width: 400px; margin: 0 auto;">You can start messaging once a lawyer accepts
+                your connection request and proposes a fee.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- APPOINTMENTS TAB -->
+<div id="appointments" class="tab-content">
+    <div class="card">
+        <h3>Scheduled Appointments</h3>
+        <p style="color: var(--text-gray); font-size: 0.9rem;">Appointments are scheduled by your lawyer.</p>
+        <br>
+        {% if appointments %}
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+            {% for appt in appointments %}
+            <div
+                style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:1rem; align-items:center;">
+                    <div
+                        style="background: var(--primary-navy); color:white; padding: 0.5rem; text-align:center; border-radius: 6px; width: 60px;">
+                        <div style="font-size:0.8rem; text-transform:uppercase;">{{ appt.datetime|date:"M" }}</div>
+                        <div style="font-weight:bold; font-size:1.2rem;">{{ appt.datetime|date:"d" }}</div>
+                    </div>
+                    <div>
+                        <h4 style="margin:0; font-size:1rem;">{{ appt.title }}</h4>
+                        <div style="font-size:0.9rem; color:var(--text-gray);">
+                            {{ appt.datetime|date:"g:i A" }} ({{ appt.duration_minutes }} min)
+                        </div>
+                        {% if appt.location %}
+                        <div style="font-size:0.85rem; color:var(--text-gray); margin-top:2px;">
+                            <i class="fas fa-map-marker-alt" style="margin-right:4px;"></i> {{ appt.location }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="badge badge-success">{{ appt.get_status_display }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div
+            style="text-align: center; padding: 2rem; border: 1px dashed var(--border-color); border-radius: 8px; color: var(--text-gray);">
+            <i class="far fa-calendar-times" style="font-size: 2rem; margin-bottom: 1rem; display:block;"></i>
+            No appointments scheduled yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    let isSoundMuted = localStorage.getItem('globalChatMuted') === 'true';
+
+    function toggleSound() {
+        isSoundMuted = !isSoundMuted;
+        localStorage.setItem('globalChatMuted', isSoundMuted);
+        updateSoundUI();
+    }
+
+    function updateSoundUI() {
+        const icon = document.getElementById('soundIcon');
+        const text = document.getElementById('soundText');
+        const dropdownIcon = document.getElementById('soundIconDropdown');
+        const dropdownText = document.getElementById('soundTextDropdown');
+
+        if (isSoundMuted) {
+            // Main Button shows Muted
+            if (icon) {
+                icon.className = 'fas fa-bell-slash text-danger';
+                icon.style.color = '';
+            }
+            if (text) text.innerText = 'Muted';
+
+            // Dropdown shows "Sound ON" or "Unmute Chat"
+            if (dropdownIcon) {
+                dropdownIcon.className = 'fas fa-bell';
+                dropdownIcon.style.color = '#10b981';
+            }
+            if (dropdownText) dropdownText.innerText = 'Sound ON';
+        } else {
+            // Main Button shows Sound ON
+            if (icon) {
+                icon.className = 'fas fa-bell';
+                icon.style.color = '#10b981';
+            }
+            if (text) text.innerText = 'Sound ON';
+
+            // Dropdown shows "Mute Chat"
+            if (dropdownIcon) {
+                dropdownIcon.className = 'fas fa-bell-slash';
+                dropdownIcon.style.color = '#64748b';
+            }
+            if (dropdownText) dropdownText.innerText = 'Mute Chat';
+        }
+    }
+
+    function switchTab(tabId, event) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.case-tab').forEach(btn => btn.classList.remove('active'));
+
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) targetTab.classList.add('active');
+
+        if (event) {
+            let target = event.target;
+            if (!target.classList.contains('case-tab')) {
+                target = target.closest('.case-tab');
+            }
+            if (target) target.classList.add('active');
+        }
+
+        // Adjust view for messages
+        if (tabId === 'messages') {
+            setTimeout(adjustMessagingView, 100);
+        }
+    }
+
+    function adjustMessagingView() {
+        const container = document.querySelector('.message-container');
+        const tabsBox = document.querySelector('.custom-tabs-container');
+        if (!container || !tabsBox) return;
+
+        // Only trigger if messages tab is actually visible
+        if (!document.getElementById('messages').classList.contains('active')) return;
+
+        // 1. Scroll the page so the tabs are neatly at the top
+        const tabsOffset = tabsBox.offsetTop - 10;
+        window.scrollTo({
+            top: tabsOffset,
+            behavior: 'smooth'
+        });
+
+        // 2. Adjust container height to fill exactly the rest of the screen
+        setTimeout(() => {
+            const viewportHeight = window.innerHeight;
+            const rect = tabsBox.getBoundingClientRect();
+            const availableHeight = viewportHeight - rect.bottom - 40; 
+            
+            if (availableHeight > 450) {
+                container.style.height = availableHeight + 'px';
+            } else {
+                container.style.height = '500px';
+            }
+
+            // 3. Ensure list is at bottom
+            const chatBox = document.getElementById('chat-box');
+            if (chatBox) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }, 400);
+    }
+
+    // Add resize listener
+    window.addEventListener('resize', adjustMessagingView);
+
+    // WebSocket Chat logic (Globally accessible)
+    let chatSocket = null;
+    const caseId = "{{ case.id }}";
+    const currentUserId = "{{ request.user.id }}";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Restore sound icon state
+        updateSoundUI();
+
+        const chatBox = document.getElementById('chat-box');
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+        chatSocket = new WebSocket(
+            wsScheme + '://' + window.location.host + '/ws/chat/' + caseId + '/'
+        );
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'chat_message') {
+                appendChatBubble(data);
+            } else if (data.type === 'user_status_update') {
+                updateUserStatus(data.user_id, data.status);
+            } else if (data.type === 'message_deleted') {
+                const msgId = data.message_id;
+                const msgElement = document.getElementById(`msg-${msgId}`);
+                if (msgElement) {
+                    if (data.mode === 'everyone') {
+                        const contentDiv = msgElement.querySelector('.message-content');
+                        if (contentDiv) {
+                            contentDiv.innerHTML = '<i class="fas fa-ban me-1 small opacity-50"></i> <span class="fst-italic opacity-50">This message was deleted</span>';
+                        }
+                        const dropdown = msgElement.querySelector('.msg-dropdown');
+                        const toggleBtn = msgElement.querySelector('.msg-action-btn');
+                        if (dropdown) dropdown.remove();
+                        if (toggleBtn) toggleBtn.remove();
+                    } else {
+                        msgElement.style.transition = 'all 0.3s ease';
+                        msgElement.style.opacity = '0';
+                        msgElement.style.transform = 'translateY(10px)';
+                        setTimeout(() => msgElement.remove(), 300);
+                    }
+                }
+            } else if (data.type === 'chat_cleared') {
+                const chatBox = document.getElementById('chat-box');
+                if (chatBox) {
+                    chatBox.innerHTML = `
+                        <div class="text-center py-5 no-messages">
+                            <i class="far fa-comments fa-3x text-muted mb-3 opacity-25"></i>
+                            <p class="text-muted">Chat cleared. Start a new conversation!</p>
+                        </div>
+                    `;
+                }
+            } else if (data.type === 'document_deleted') {
+                const docElement = document.getElementById(`doc-${data.document_id}`);
+                if (docElement) {
+                    docElement.style.transition = 'all 0.4s ease';
+                    docElement.style.opacity = '0';
+                    docElement.style.transform = 'scale(0.8)';
+                    setTimeout(() => docElement.remove(), 400);
+                }
+            } else if (data.type === 'document_uploaded') {
+                // ... document upload handling ...
+                handleNewDocument(data.doc);
+            } else if (data.type === 'error') {
+                alert('Action Failed: ' + data.message);
+            }
+        };
+
+        function appendChatBubble(data) {
+            const messageList = document.getElementById('chat-box');
+            const noMessagesDiv = messageList.querySelector('.no-messages');
+            if (noMessagesDiv) noMessagesDiv.remove();
+
+            const isMe = data.sender_id.toString() === currentUserId;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isMe ? 'message-bubble sent' : 'message-bubble received';
+            messageDiv.id = `msg-${data.message_id}`;
+            messageDiv.dataset.createdAt = new Date().toISOString();
+
+            messageDiv.innerHTML = `
+                <div class="message-content">${data.message}</div>
+                <button class="msg-action-btn" onclick="toggleMsgDropdown(event, ${data.message_id})">
+                    <i class="fas fa-chevron-down" style="font-size:0.65rem;"></i>
+                </button>
+                <div class="msg-dropdown" id="msg-dropdown-${data.message_id}">
+                    <button class="msg-drop-item" onclick="handleDeleteMessage(${data.message_id}, 'me')">
+                        <span class="msg-drop-icon" style="color:#64748b;"><i class="fas fa-eye-slash"></i></span>
+                        Delete for me
+                    </button>
+                    ${isMe ? `
+                    <div class="msg-drop-divider"></div>
+                    <button class="msg-drop-item msg-drop-danger" onclick="handleDeleteMessage(${data.message_id}, 'everyone')">
+                        <span class="msg-drop-icon"><i class="fas fa-trash-alt"></i></span>
+                        Delete for everyone
+                    </button>
+                    ` : ''}
+                </div>
+                <span class="message-meta">${data.timestamp}</span>
+            `;
+
+            messageList.appendChild(messageDiv);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        function handleNewDocument(doc) {
+            const container = document.getElementById('document-list-container');
+            if (!container) return;
+            
+            const noDocs = container.querySelector('p');
+            if (noDocs && noDocs.textContent.includes('No documents')) noDocs.remove();
+
+            const isSentByMe = doc.uploaded_by_id.toString() === currentUserId;
+            const docHtml = `
+                <div id="doc-${doc.id}" style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; position: relative; background: #fff; opacity: 0; transform: translateY(10px); transition: all 0.4s ease;">
+                    <div style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items: flex-start;">
+                         <i class="fas fa-file-pdf" style="font-size: 1.5rem; color: #ef4444;"></i>
+                         <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="badge" style="background:${isSentByMe ? '#f3f4f6' : '#e0f2fe'}; color:${isSentByMe ? '#1f2937' : '#0369a1'}; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">
+                                ${isSentByMe ? 'You' : (doc.uploaded_by_role === 'lawyer' ? 'Lawyer' : 'Client')}
+                            </span>
+                            
+                            <div class="dropdown doc-dropdown" style="position: relative;">
+                                <button class="btn btn-link text-muted p-0 doc-dropdown-toggle" type="button" style="text-decoration: none; border: none; background: none; cursor: pointer;">
+                                    <i class="fas fa-ellipsis-v" style="font-size: 0.8rem;"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border doc-dropdown-menu" style="display: none; position: absolute; right: 0; background: white; z-index: 100; min-width: 150px; padding: 0.5rem 0; border-radius: 4px; list-style: none;">
+                                    <li><a class="dropdown-item doc-dropdown-item" href="/document/${doc.id}/delete/me/" style="display: block; padding: 0.25rem 1rem; color: #334155; text-decoration: none; font-size: 0.85rem;">
+                                        <i class="fas fa-eye-slash me-2"></i> Delete for me
+                                    </a></li>
+                                    ${isSentByMe ? `
+                                    <li><hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #e2e8f0;"></li>
+                                    <li><a class="dropdown-item text-danger doc-dropdown-item" href="/document/${doc.id}/delete/everyone/" data-mode="everyone" style="display: block; padding: 0.25rem 1rem; color: #dc2626; text-decoration: none; font-size: 0.85rem;">
+                                        <i class="fas fa-trash-alt me-2"></i> Delete for everyone
+                                    </a></li>
+                                    ` : ''}
+                                </ul>
+                            </div>
+                         </div>
+                    </div>
+                    
+                    <div style="font-weight: 500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem;" title="${doc.title}">
+                        ${doc.title}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-gray);">${doc.uploaded_at}</div>
+                    <a href="${doc.file_url}" target="_blank" style="color: var(--primary-navy); font-size: 0.85rem; font-weight: 600; display: block; margin-top: 0.5rem; text-decoration: none;">Download</a>
+                </div>
+            `;
+            container.insertAdjacentHTML('afterbegin', docHtml);
+
+            setTimeout(() => {
+                const newElement = document.getElementById(`doc-${doc.id}`);
+                if (newElement) {
+                    newElement.style.opacity = '1';
+                    newElement.style.transform = 'translateY(0)';
+
+                    // Bind delete listeners to new dropdown items
+                    newElement.querySelectorAll('.doc-dropdown-item').forEach(item => {
+                        item.addEventListener('click', function (e) {
+                            const href = this.getAttribute('href');
+                            if (!href.includes('delete')) return;
+                            e.preventDefault();
+                            const mode = href.includes('everyone') ? 'everyone' : 'me';
+                            if (mode === 'everyone' && !confirm('Are you sure?')) return;
+                            chatSocket.send(JSON.stringify({
+                                'action': 'delete_document',
+                                'document_id': doc.id,
+                                'mode': mode
+                            }));
+                        });
+                    });
+                }
+            }, 50);
+        }
+
+        chatSocket.onclose = function (e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        // Interaction & Progress Status WebSocket
+        const statusSocket = new WebSocket(
+            wsScheme + '://' + window.location.host + '/ws/interaction-status/'
+        );
+
+        statusSocket.onopen = function () {
+            console.log('Status socket connected');
+            statusSocket.send(JSON.stringify({
+                'action': 'subscribe',
+                'case_id': caseId
+            }));
+        };
+
+        statusSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            console.log("Status Update Received:", data);
+
+            if (data.type === 'case_progress_update') {
+                // Update Detailed Status Text
+                const statusText = document.getElementById('progress-status-text');
+                if (statusText) statusText.textContent = data.detailed_status;
+
+                // Update Percentage Text
+                const percentText = document.getElementById('progress-percentage-text');
+                if (percentText) percentText.textContent = data.progress_percentage + '%';
+
+                // Update Progress Bar
+                const progressBar = document.getElementById('progress-bar-fill');
+                if (progressBar) progressBar.style.width = data.progress_percentage + '%';
+
+                // Update Last Updated Text
+                const lastUpdated = document.getElementById('last-updated-text');
+                if (lastUpdated) lastUpdated.textContent = 'Last updated by your lawyer just now';
+
+                // Update Next Hearing Date
+                const hearingContainer = document.getElementById('next-hearing-container');
+                const hearingDate = document.getElementById('next-hearing-date');
+                if (data.next_hearing_date) {
+                    if (hearingContainer) hearingContainer.style.display = 'block';
+                    if (hearingDate) hearingDate.innerHTML = `<i class="fas fa-gavel me-1"></i> ${data.next_hearing_date}`;
+                } else {
+                    if (hearingContainer) hearingContainer.style.display = 'none';
+                }
+
+                // Update Status Badge
+                const statusBadge = document.getElementById('case-status-badge');
+                if (statusBadge) {
+                    statusBadge.className = `badge badge-${data.status}`;
+                    statusBadge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                }
+            } else if (data.type === 'status_update') {
+                const item = document.querySelector(`.interaction-item[data-lawyer-id="${data.lawyer_id}"]`);
+                if (item) {
+                    const badge = item.querySelector('.status-badge');
+                    // Update badge
+                    if (badge) {
+                        badge.className = `badge badge-${data.status} status-badge`;
+                        badge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                    }
+
+                    // Update Fee Display
+                    if (data.quoted_fee) {
+                        const feeInfo = item.querySelector('p');
+                        if (feeInfo && !feeInfo.innerHTML.includes('Rs.')) {
+                            feeInfo.innerHTML += ` • <span style="color: #16a34a; font-weight: 700;">Rs. ${data.quoted_fee}</span>`;
+                        } else if (feeInfo) {
+                            // Update existing fee
+                            const feeSpan = feeInfo.querySelector('span');
+                            if (feeSpan) feeSpan.textContent = `Rs. ${data.quoted_fee}`;
+                        }
+                    }
+
+                    // Insert "Hire Lawyer" button if status is accepted AND fee is proposed
+                    if (data.status === 'accepted' && data.quoted_fee) {
+                        const container = item.querySelector('.interaction-status-container');
+                        if (!container.querySelector('.btn-primary')) {
+                            const hireBtn = document.createElement('a');
+                            hireBtn.href = `/hire-lawyer/${caseId}/${data.lawyer_id}/`;
+                            hireBtn.className = 'btn-primary';
+                            hireBtn.style.padding = '0.5rem 1rem';
+                            hireBtn.style.fontSize = '0.85rem';
+                            hireBtn.style.background = '#16a34a';
+                            hireBtn.style.borderColor = '#16a34a';
+                            hireBtn.innerHTML = '<i class="fas fa-handshake"></i> Hire Lawyer';
+                            container.insertBefore(hireBtn, container.firstChild);
+                        }
+                    } else if (data.status === 'hired') {
+                        // Reload to update sidebar and state if hired
+                        window.location.reload();
+                    }
+                }
+            }
+        };
+
+        statusSocket.onclose = function () {
+            console.warn('Status socket closed, reconnecting...');
+            // Reconnection logic could go here
+        };
+
+        // Handle Form Submission via AJAX
+        const chatForm = document.querySelector('form[action*="send-message"]');
+        if (chatForm) {
+            chatForm.addEventListener('submit', function (ex) {
+                ex.preventDefault();
+                const input = chatForm.querySelector('input[name="content"]');
+                const content = input.value;
+                if (!content) return;
+
+                const formData = new FormData(chatForm);
+                fetch(chatForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(response => {
+                    input.value = '';
+                }).catch(err => console.error(err));
+            });
+        }
+
+        // AJAX Document Upload
+        const docUploadForm = document.getElementById('client-document-upload-form');
+        if (docUploadForm) {
+            docUploadForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const btn = document.getElementById('client-upload-btn');
+                const btnText = btn.querySelector('.btn-text');
+                const spinner = btn.querySelector('.spinner-border');
+
+                btn.disabled = true;
+                btnText.classList.add('d-none');
+                spinner.classList.remove('d-none');
+
+                const formData = new FormData(this);
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            this.reset();
+                        } else {
+                            alert('Upload failed.');
+                        }
+                    })
+                    .catch(err => console.error(err))
+                    .finally(() => {
+                        btn.disabled = false;
+                        btnText.classList.remove('d-none');
+                        spinner.classList.add('d-none');
+                    });
+            });
+        }
+
+        // Custom Document Dropdown Toggle Logic
+        document.addEventListener('click', function (e) {
+            const toggle = e.target.closest('.doc-dropdown-toggle');
+            const allMenus = document.querySelectorAll('.doc-dropdown-menu');
+
+            if (toggle) {
+                const menu = toggle.nextElementSibling;
+                const isOpen = (menu.style.display === 'block');
+
+                // Close all other menus first
+                allMenus.forEach(m => m.style.display = 'none');
+
+                // Toggle current menu
+                if (!isOpen) {
+                    menu.style.display = 'block';
+                }
+                e.stopPropagation();
+            } else {
+                // Clicked outside, close all menus
+                allMenus.forEach(m => m.style.display = 'none');
+            }
+        });
+
+        // WebSocket Document Deletion
+        document.querySelectorAll('.doc-dropdown-item').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                // Only handle links that look like delete links
+                if (!this.getAttribute('href').includes('delete')) return;
+
+                e.preventDefault();
+                const urlParts = this.getAttribute('href').split('/');
+                const docId = urlParts[urlParts.length - 4]; // document/ID/delete/MODE/
+                const mode = urlParts[urlParts.length - 2];
+
+                if (mode === 'everyone' && !confirm('Are you sure you want to delete this file for everyone?')) {
+                    return;
+                }
+
+                if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                    chatSocket.send(JSON.stringify({
+                        'action': 'delete_document',
+                        'document_id': docId,
+                        'mode': mode
+                    }));
+                } else {
+                    alert('Connection lost. Please refresh the page.');
+                }
+            });
+        });
+    });
+
+    // Message Interaction Logic
+    function toggleMsgDropdown(event, msgId) {
+        event.stopPropagation();
+        const dropdown = document.getElementById(`msg-dropdown-${msgId}`);
+        const allDropdowns = document.querySelectorAll('.msg-dropdown');
+
+        const isShow = dropdown.classList.contains('show');
+        allDropdowns.forEach(d => d.classList.remove('show', 'show-down'));
+
+        if (!isShow) {
+            // Check for space above
+            const rect = dropdown.parentElement.getBoundingClientRect();
+            const container = document.getElementById('chat-box');
+            const containerRect = container.getBoundingClientRect();
+            
+            // If message bubble is near the top of the container, open downward
+            if (rect.top - containerRect.top < 150) {
+                dropdown.classList.add('show-down');
+            }
+            dropdown.classList.add('show');
+        }
+    }
+
+    function handleDeleteMessage(msgId, mode) {
+        if (mode === 'everyone') {
+            const msgElement = document.getElementById(`msg-${msgId}`);
+            if (msgElement && msgElement.dataset.createdAt) {
+                const createdAt = new Date(msgElement.dataset.createdAt);
+                const now = new Date();
+                const diffMinutes = (now - createdAt) / (1000 * 60);
+                if (diffMinutes > 2) {
+                    showDeleteModal(
+                        'Cannot Delete',
+                        'This message was sent more than 2 minutes ago and can no longer be deleted for everyone.',
+                        null, null, true
+                    );
+                    return;
+                }
+            }
+            showDeleteModal(
+                'Delete for Everyone?',
+                'This message will be permanently removed for all participants in this conversation.',
+                msgId, 'everyone', false
+            );
+        } else {
+            doDeleteMessage(msgId, 'me');
+        }
+    }
+
+    function showDeleteModal(title, body, msgId, mode, infoOnly) {
+        document.getElementById('deleteModalTitle').textContent = title;
+        document.getElementById('deleteModalBody').textContent = body;
+        const confirmBtn = document.getElementById('deleteModalConfirm');
+        if (infoOnly) {
+            confirmBtn.style.display = 'none';
+        } else {
+            confirmBtn.style.display = '';
+            confirmBtn.onclick = function() {
+                closeDeleteModal();
+                doDeleteMessage(msgId, mode);
+            };
+        }
+        document.getElementById('msgDeleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('msgDeleteModal').classList.remove('show');
+    }
+
+    function doDeleteMessage(msgId, mode) {
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'action': 'delete_message',
+                'message_id': msgId,
+                'mode': mode
+            }));
+        } else {
+            showDeleteModal('Connection Error', 'Socket connection lost. Please refresh the page.', null, null, true);
+        }
+    }
+
+    function trackDownload(msgId) {
+        console.log("Tracking download for message:", msgId);
+    }
+
+    // Close and Toggle Dropdowns (Event Delegation)
+    document.addEventListener('click', function (e) {
+        const msgToggle = e.target.closest('.msg-action-btn');
+        const headerToggle = e.target.closest('.header-dropdown-toggle');
+        const docToggle = e.target.closest('.doc-dropdown-toggle');
+
+        // Handle Message Dropdown Toggle
+        if (msgToggle) {
+            e.stopPropagation();
+            const msgId = msgToggle.getAttribute('onclick').match(/\d+/)[0]; 
+            // Note: Better to just use the existing toggleMsgDropdown but this is a fallback
+            return; 
+        }
+
+        // Handle Header Dropdown Toggle
+        if (headerToggle) {
+            e.preventDefault();
+            e.stopPropagation();
+            const menu = headerToggle.nextElementSibling;
+            const isShow = menu.classList.contains('show');
+            
+            // Close all dropdowns first
+            document.querySelectorAll('.header-dropdown-menu').forEach(m => m.classList.remove('show'));
+            document.querySelectorAll('.msg-dropdown').forEach(m => m.classList.remove('show'));
+            
+            if (!isShow) {
+                menu.classList.add('show');
+            }
+            return;
+        }
+
+        // Handle Document Dropdown (Legacy support)
+        if (docToggle) {
+            // Already handled by existing doc listener or can be moved here
+        }
+
+        // Close all if clicked outside
+        if (!e.target.closest('.msg-dropdown') && !e.target.closest('.header-dropdown-menu')) {
+            document.querySelectorAll('.msg-dropdown').forEach(d => d.classList.remove('show'));
+            document.querySelectorAll('.header-dropdown-menu').forEach(d => d.classList.remove('show'));
+        }
+    });
+
+    // Close delete modal on overlay click
+    document.getElementById('msgDeleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+
+    function handleClearChat() {
+        showDeleteModal(
+            'Clear the entire chat?',
+            'This will hide all messages from your view. The other participant will still see them. This cannot be undone.',
+            null, 'clear', false
+        );
+        // Overwrite confirm button for clear chat
+        document.getElementById('deleteModalConfirm').onclick = function() {
+            closeDeleteModal();
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    'action': 'clear_chat'
+                }));
+            }
+        };
+    }
+
+    // Update toggleSound to also update dropdown icon
+    const originalToggleSound = window.toggleSound;
+    window.toggleSound = function() {
+        if (typeof originalToggleSound === 'function') originalToggleSound();
+        const isMuted = localStorage.getItem('globalChatMuted') === 'true';
+        const icon = document.getElementById('soundIconDropdown');
+        const text = document.getElementById('soundTextDropdown');
+        if (icon && text) {
+            icon.className = isMuted ? 'fas fa-bell' : 'fas fa-bell-slash';
+            text.textContent = isMuted ? 'Unmute Chat' : 'Mute Chat';
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const isMuted = localStorage.getItem('globalChatMuted') === 'true';
+        const icon = document.getElementById('soundIconDropdown');
+        const text = document.getElementById('soundTextDropdown');
+        if (icon && text) {
+            icon.className = isMuted ? 'fas fa-bell' : 'fas fa-bell-slash';
+            text.textContent = isMuted ? 'Unmute Chat' : 'Mute Chat';
+        }
+    });
+
+    window.toggleMsgDropdown = toggleMsgDropdown;
+    window.handleDeleteMessage = handleDeleteMessage;
+    window.trackDownload = trackDownload;
+    window.handleClearChat = handleClearChat;
+</script>
+
+<!-- Professional Delete Confirmation Modal -->
+<div id="msgDeleteModal" class="msg-modal-overlay">
+    <div class="msg-modal-box">
+        <div class="msg-modal-icon"><i class="fas fa-trash-alt"></i></div>
+        <h5 class="msg-modal-title" id="deleteModalTitle">Delete Message?</h5>
+        <p class="msg-modal-body" id="deleteModalBody">This action cannot be undone.</p>
+        <div class="msg-modal-actions">
+            <button class="msg-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+            <button class="msg-modal-confirm" id="deleteModalConfirm">Delete</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .msg-action-btn {
+        position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+        background: rgba(255,255,255,0.15); border: none; border-radius: 50%;
+        width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; opacity: 0; transition: opacity 0.2s; color: inherit; padding: 0;
+    }
+    .message-bubble:hover .msg-action-btn { opacity: 1; }
+    .msg-action-btn:hover { background: rgba(0,0,0,0.15); }
+
+    .msg-dropdown {
+        display: none; position: absolute; bottom: 30px; right: 0;
+        background: #ffffff; border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15); min-width: 190px;
+        z-index: 1000; overflow: hidden; border: 1px solid #f1f5f9;
+        animation: dropIn 0.15s ease-out;
+    }
+    .msg-dropdown.show { display: block; }
+    @keyframes dropIn {
+        from { opacity: 0; transform: translateY(6px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .msg-drop-item {
+        display: flex; align-items: center; gap: 0.6rem;
+        width: 100%; padding: 0.65rem 1rem; background: none; border: none;
+        font-size: 0.875rem; color: #334155; cursor: pointer;
+        transition: background 0.15s; text-align: left;
+    }
+    .msg-drop-item:hover { background: #f8fafc; }
+    .msg-drop-icon {
+        width: 26px; height: 26px; border-radius: 6px; background: #f1f5f9;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; flex-shrink: 0;
+    }
+    .msg-drop-danger { color: #ef4444; }
+    .msg-drop-danger .msg-drop-icon { background: #fee2e2; color: #ef4444; }
+    .msg-drop-danger:hover { background: #fff5f5; }
+    .msg-drop-divider { height: 1px; background: #f1f5f9; margin: 2px 0; }
+
+    .msg-modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(15,23,42,0.55); backdrop-filter: blur(4px);
+        z-index: 99999; align-items: center; justify-content: center;
+    }
+    .msg-modal-overlay.show { display: flex; }
+    .msg-modal-box {
+        background: #fff; border-radius: 20px; padding: 2.25rem 2rem;
+        width: 90%; max-width: 380px; text-align: center;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+        animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalPop {
+        from { opacity: 0; transform: scale(0.88); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    .msg-modal-icon {
+        width: 60px; height: 60px; border-radius: 50%; background: #fee2e2;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.25rem; font-size: 1.4rem; color: #ef4444;
+    }
+    .msg-modal-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+    .msg-modal-body  { font-size: 0.875rem; color: #64748b; margin-bottom: 1.75rem; line-height: 1.5; }
+    .msg-modal-actions { display: flex; gap: 0.75rem; }
+    .msg-modal-cancel, .msg-modal-confirm {
+        flex: 1; padding: 0.7rem 1rem; border-radius: 10px; border: none;
+        font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .msg-modal-cancel { background: #f1f5f9; color: #475569; }
+    .msg-modal-cancel:hover { background: #e2e8f0; }
+    .msg-modal-confirm { background: linear-gradient(135deg,#ef4444,#dc2626); color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.35); }
+    .msg-modal-confirm:hover { background: linear-gradient(135deg,#dc2626,#b91c1c); transform: translateY(-1px); }
+
+    /* Header Dropdown Support */
+    .header-dropdown-menu {
+        display: none; border-radius: 12px; padding: 0.5rem; min-width: 185px;
+        position: absolute; right: 0; background: white; list-style: none; z-index: 1000;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.12); border: 1px solid #f1f5f9;
+        animation: dropIn 0.2s ease-out; margin-top: 5px;
+    }
+    .header-dropdown-menu.show { display: block; }
+    .header-dropdown-menu .dropdown-item {
+        border-radius: 8px; width: 100%; border: none; background: none; cursor: pointer;
+        text-align: left; padding: 0.65rem 0.8rem; font-size: 0.9rem; color: #334155;
+        display: flex; align-items: center; transition: background 0.2s;
+    }
+    .header-dropdown-menu .dropdown-item:hover { background: #f8fafc; }
+    .header-dropdown-menu .dropdown-item.text-danger:hover { background: #fff5f5; }
+    .header-dropdown-menu .dropdown-divider { margin: 0.5rem 0; border: none; border-top: 1px solid #f1f5f9; }
+</style>
+{% endblock %}

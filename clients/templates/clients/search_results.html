@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Results - Lawgorithm</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="{% static 'css/lawgorithm.css' %}">
+  <style>
+    /* Specific overrides for search results page */
+    .search-results-section {
+      padding-top: 120px; /* Account for fixed navbar */
+      padding-bottom: 80px;
+      min-height: 60vh;
+    }
+    
+    .no-results {
+        text-align: center;
+        grid-column: 1 / -1;
+        padding: 4rem;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container navbar-container">
+      <div class="navbar-logo">
+        <a href="/" style="text-decoration: none; color: inherit;"><span class="logo-text">Lawgorithm</span></a>
+      </div>
+      <nav class="navbar-nav">
+        <a href="/#home" class="nav-link">Home</a>
+        <a href="/#find-lawyers" class="nav-link">Find Lawyers</a>
+        <a href="/#how-it-works" class="nav-link">How It Works</a>
+        <a href="/lawyer/lawyer-login/" class="nav-link">For Lawyers</a>
+        <a href="/#contact" class="nav-link">Contact</a>
+      </nav>
+      <div class="navbar-actions">
+        <a href="{% url 'signin' %}" class="btn btn-secondary">Sign In</a>
+        <button class="btn-primary glow">Post a Case</button>
+      </div>
+      <button class="mobile-menu-toggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Search Results -->
+    <section class="featured-lawyers search-results-section">
+      <div class="container">
+        <h2 class="section-title">Search Results</h2>
+        <p class="section-subtitle">Found verified legal professionals matching your criteria</p>
+
+        <div class="lawyers-grid">
+          {% for lawyer in lawyers %}
+          <article class="lawyer-card" style="display: flex; flex-direction: column; align-items: start; gap: 0.5rem;">
+            <div class="lawyer-photo" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin-bottom: 0.5rem; background: #f3f4f6; display: flex; align-items: center; justify-content: center; align-self: center;">
+                {% if lawyer.profile_picture %}
+                <img src="{{ lawyer.profile_picture.url }}" alt="{{ lawyer.user.get_full_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <i class="fas fa-user-tie" style="font-size: 3rem; color: #9ca3af;"></i>
+                {% endif %}
+            </div>
+            
+            <h3 class="lawyer-name" style="width: 100%; text-align: center;">{{ lawyer.user.get_full_name }}</h3>
+            <p class="lawyer-city" style="width: 100%; text-align: center; color: #6b7280; margin-bottom: 0.5rem;">
+                <i class="fas fa-map-marker-alt"></i> {{ lawyer.city.name }}
+            </p>
+            
+            <div class="lawyer-areas" style="width: 100%; text-align: center; font-size: 0.85rem; color: var(--primary-color);">
+                {% for area in lawyer.practice_areas.all|slice:":2" %}
+                    {{ area.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if lawyer.practice_areas.count > 2 %}...{% endif %}
+            </div>
+
+            <!-- Rating / New Lawyer Status -->
+            <div class="lawyer-rating" style="width: 100%; text-align: center; margin: 0.5rem 0;">
+                {% if lawyer.total_reviews > 0 %}
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                        <div style="font-size: 0.9rem; position: relative; display: inline-block;">
+                            <!-- Empty Stars Background -->
+                            <div style="color: #475569;">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <!-- Filled Stars Overlay -->
+                            <div style="color: #f59e0b; position: absolute; top: 0; left: 0; overflow: hidden; white-space: nowrap; width: {{ lawyer.rating_percentage }}%;">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #94a3b8;">
+                            <span style="font-weight: 700; color: #e2e8f0;">{{ lawyer.avg_rating|floatformat:1 }}</span>
+                            <span style="margin-left: 2px;">({{ lawyer.total_reviews }} reviews)</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                        <span class="badge" style="background: #ecfccb; color: #3f6212; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                            New Lawyer
+                        </span>
+                        <div style="font-size: 0.85rem; color: #94a3b8;">
+                            <strong style="color: #e2e8f0;">{{ lawyer.experience_years }} years</strong> experience
+                        </div>
+                        <div style="font-size: 0.8rem; color: #64748b; font-style: italic;">
+                            No reviews yet
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="lawyer-actions" style="width: 100%; margin-top: auto;">
+              <a href="{% url 'lawyer_public_profile' lawyer.pk %}" class="btn-primary-small" style="text-decoration: none; display: block; text-align: center; width: 100%;">View Profile</a>
+            </div>
+          </article>
+          {% empty %}
+            <div class="no-results">
+                <h3 style="color:black">No lawyers found</h3>
+                <p style="color:black">We couldn't find any lawyers matching your search criteria. Please try different keywords or location.</p>
+                <div style="margin-top: 2rem;">
+                    <a href="/" class="btn-primary">Back to Home</a>
+                </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" id="contact">
+    <div class="container footer-container">
+      <div class="footer-column">
+        <h3 class="footer-heading">Lawgorithm</h3>
+        <p class="footer-text">AI-powered lawyer matching for real legal cases. Find verified lawyers with confidence.
+        </p>
+        <div class="social-icons">
+          <a href="#" aria-label="Facebook">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3c-1.7 0-3 1.3-3 3v3H9v4h3v8h4v-8h3l1-4h-4V5c0-.6.4-1 1-1h3V2z" />
+            </svg>
+          </a>
+          <a href="#" aria-label="Twitter">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5 0-.28-.03-.56-.08-.83A7.72 7.72 0 0 0 23 3z" />
+            </svg>
+          </a>
+          <a href="#" aria-label="LinkedIn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-column">
+        <h4 class="footer-heading">About</h4>
+        <ul class="footer-links">
+          <li><a href="/#about">About Us</a></li>
+          <li><a href="/#how-it-works">How It Works</a></li>
+          <li><a href="/#lawyers">Our Lawyers</a></li>
+          <li><a href="/#blog">Blog</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4 class="footer-heading">Legal</h4>
+        <ul class="footer-links">
+          <li><a href="/#terms">Terms of Service</a></li>
+          <li><a href="/#privacy">Privacy Policy</a></li>
+          <li><a href="/#cookies">Cookie Policy</a></li>
+          <li><a href="/#disclaimer">Disclaimer</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4 class="footer-heading">Contact</h4>
+        <ul class="footer-links">
+          <li><a href="mailto:support@lawgorithm.com">support@lawgorithm.com</a></li>
+          <li><a href="tel:+1234567890">+1 (234) 567-890</a></li>
+          <li>123 Legal Street<br>Suite 100<br>New York, NY 10001</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container">
+        <p>&copy; 2025 Lawgorithm. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>

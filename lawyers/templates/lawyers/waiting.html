@@ -1,0 +1,43 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}Verification Pending{% endblock %}
+{% block page_title %}Verification Pending{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+    <div class="text-center" style="max-width: 520px;">
+        <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#f6c23e,#dda20a);display:flex;align-items:center;justify-content:center;margin:0 auto 1.75rem;font-size:2.5rem;color:#fff;box-shadow:0 10px 30px rgba(246,194,62,0.35);">
+            <i class="fas fa-hourglass-half"></i>
+        </div>
+        <h2 style="color:#1a2b4a;font-family:'Poppins',sans-serif;font-weight:700;margin-bottom:0.75rem;">
+            Application Under Review
+        </h2>
+        <p style="color:#6c757d;font-size:1rem;line-height:1.7;margin-bottom:2rem;">
+            Your lawyer profile has been submitted and is currently being reviewed by our admin team.
+            This process typically takes <strong>24–48 hours</strong>. You will be notified by email once approved.
+        </p>
+
+        <div class="card-box mb-4" style="text-align:left;">
+            <h6 style="color:#1a2b4a;font-weight:700;margin-bottom:1rem;"><i class="fas fa-list-check me-2"></i>What happens next?</h6>
+            <div style="display:flex;flex-direction:column;gap:0.85rem;">
+                <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1cc88a,#13855c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;flex-shrink:0;"><i class="fas fa-check"></i></div>
+                    <div><strong style="color:#364d59;">Profile Submitted</strong><br><small class="text-muted">Your documents and information have been received.</small></div>
+                </div>
+                <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f6c23e,#dda20a);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.75rem;flex-shrink:0;"><i class="fas fa-spinner"></i></div>
+                    <div><strong style="color:#364d59;">Admin Review</strong><br><small class="text-muted">Our team is verifying your credentials and documents.</small></div>
+                </div>
+                <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;color:#6c757d;font-size:0.75rem;flex-shrink:0;"><i class="fas fa-envelope"></i></div>
+                    <div><strong style="color:#adb5bd;">Email Notification</strong><br><small class="text-muted">You'll receive an email when your account is approved.</small></div>
+                </div>
+            </div>
+        </div>
+
+        <a href="{% url 'lawyer_logout' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+        </a>
+    </div>
+</div>
+{% endblock %}

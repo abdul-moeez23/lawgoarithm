@@ -1,0 +1,1815 @@
+{% extends 'lawyers/base_lawyer.html' %}
+{% load static %}
+
+{% block title %}Case Details - {{ case.title }}{% endblock %}
+{% block page_title %}Case Details{% endblock %}
+
+{% block content %}
+<div class="case-header mb-4 anime-slide-in">
+    <div class="card-box secondary-bg p-4 rounded-4 shadow-sm border-0 position-relative overflow-hidden">
+        <!-- Background Decoration -->
+        <div class="position-absolute top-0 end-0 p-3 opacity-10">
+            <i class="fas fa-briefcase fa-6x rotate-15"></i>
+        </div>
+
+        <div class="row align-items-center position-relative">
+            <div class="col-md-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item"><a href="{% url 'lawyer_my_cases' %}"
+                                class="text-decoration-none text-primary-custom">My Cases</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Case Detail</li>
+                    </ol>
+                </nav>
+                <h2 class="display-6 fw-bold mb-1">{{ case.title }}</h2>
+                <div class="d-flex align-items-center gap-3 flex-wrap mt-2">
+                    <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">
+                        <i class="fas fa-tag me-1"></i> {{ case.category.name }}
+                    </span>
+                    <span class="badge bg-info text-dark px-3 py-2 rounded-pill shadow-sm">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ case.city.name }}
+                    </span>
+                    <span class="badge bg-{{ case.status|default:'secondary' }} px-3 py-2 rounded-pill shadow-sm">
+                        {{ case.get_status_display }}
+                    </span>
+                </div>
+
+                {% if interaction.status == 'invited' %}
+                <div
+                    class="alert alert-info mt-3 border-0 bg-info-subtle d-flex justify-content-between align-items-center animate-pulse">
+                    <div>
+                        <i class="fas fa-info-circle me-2"></i> You have been invited to this case.
+                    </div>
+                    <a href="{% url 'handle_connection_request' interaction.id 'accept' %}"
+                        class="btn btn-success btn-sm px-4 rounded-pill shadow-sm">
+                        <i class="fas fa-check me-1"></i> Accept Invitation
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <div class="client-mini-card d-inline-flex align-items-center bg-white p-2 rounded-pill shadow-sm">
+                    <div class="avatar-circle-sm bg-warning text-white me-2 d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold;">
+                        {{ case.client.first_name|first|upper }}
+                    </div>
+                    <div class="text-start me-3">
+                        <small class="text-muted d-block" style="font-size: 0.7rem;">CLIENT</small>
+                        <span class="fw-bold small">{{ case.client.get_full_name|default:case.client.email }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs Navigation - Screenshot Match Style -->
+<div class="custom-tabs-container mb-4 anime-fade-in">
+    <div class="tabs-scroll-wrapper border-bottom">
+        <div class="nav nav-tabs border-bottom-0" id="caseTabs" role="tablist">
+            <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details"
+                type="button" role="tab">
+                Case Details
+            </button>
+            <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button"
+                role="tab">
+                Messages
+                {% if unread_count %}
+                <span class="badge rounded-pill bg-danger ms-1" style="font-size: 0.65rem;">{{ unread_count }}</span>
+                {% endif %}
+            </button>
+            <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button"
+                role="tab">
+                Documents
+            </button>
+            <button class="nav-link" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments"
+                type="button" role="tab">
+                Appointments
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content anime-slide-up" id="caseTabsContent">
+
+    <!-- Details Tab -->
+    <div class="tab-pane fade show active" id="details" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card-box h-100">
+                    <h5 class="mb-4 d-flex align-items-center">
+                        <i class="fas fa-align-left me-2 text-primary"></i> Case Overview
+                    </h5>
+                    <div class="case-description p-3 bg-light rounded-3 mb-4">
+                        <p class="mb-0 text-dark" style="line-height: 1.6; white-space: pre-line;">
+                            {{ case.description }}
+                        </p>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="p-3 border rounded-3 bg-white shadow-xs">
+                                <small class="text-muted d-block mb-1">Court Level</small>
+                                <span class="fw-bold">{{ case.court_level.name|default:"Not specified" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 border rounded-3 bg-white shadow-xs">
+                                <small class="text-muted d-block mb-1">Fee Band</small>
+                                <span class="fw-bold">{{ case.fee_band.name|default:"Flexible" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 border rounded-3 bg-white shadow-xs">
+                                <small class="text-muted d-block mb-1">Urgency</small>
+                                <span class="badge bg-warning text-dark">{{ case.urgency|default:"Regular" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 border rounded-3 bg-white shadow-xs">
+                                <small class="text-muted d-block mb-1">Date Posted</small>
+                                <span class="fw-bold">{{ case.created_at|date:"d M, Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Case Status & Progress -->
+                <div class="card-box mb-4 bg-white border-primary shadow-sm">
+                    <h5 class="mb-4"><i class="fas fa-tasks me-2 text-success"></i>Case Progress</h5>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="fw-bold text-dark">Completion Status</span>
+                            <span class="fw-bold text-success">{{ case.progress_percentage }}%</span>
+                        </div>
+                        <div class="progress" style="height: 12px; border-radius: 6px;">
+                            <div id="lawyer-progress-bar"
+                                class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                                role="progressbar" data-progress="{{ case.progress_percentage|default:0 }}"
+                                style="width: 0%;"></div>
+                        </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function () {
+                                var bar = document.getElementById('lawyer-progress-bar');
+                                if (bar) {
+                                    bar.style.width = bar.getAttribute('data-progress') + '%';
+                                }
+                            });
+                        </script>
+                        <small class="text-muted mt-2 d-block">Current Stage: <strong>
+                                {{ case.detailed_status|default:"Initial Phase" }}
+                            </strong></small>
+                    </div>
+
+                    {% if case.next_hearing_date %}
+                    <div class="alert alert-info py-2 px-3 mb-4 d-flex align-items-center">
+                        <i class="far fa-clock me-3 fs-4"></i>
+                        <div>
+                            <small class="d-block text-uppercase"
+                                style="font-size: 0.65rem; letter-spacing: 0.5px;">Next Hearing</small>
+                            <span class="fw-bold">{{ case.next_hearing_date|date:"d M, Y - h:i A" }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if interaction.status == 'hired' %}
+                    <button class="btn btn-primary-custom w-100 py-2" data-bs-toggle="modal"
+                        data-bs-target="#updateProgressModal">
+                        <i class="fas fa-edit me-2"></i> Update Progress
+                    </button>
+                    {% else %}
+                    <div class="alert alert-warning py-2 mb-0" style="font-size: 0.85rem;">
+                        <i class="fas fa-lock me-2"></i> Progress updates will be available once hired.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Financial Info -->
+                <div class="card-box">
+                    <h5 class="mb-4"><i class="fas fa-file-invoice-dollar me-2 text-warning"></i>Financial Summary</h5>
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                        <span class="text-muted">Quoted Fee:</span>
+                        <span class="h4 mb-0 fw-bold text-dark">Rs. {{ interaction.quoted_fee|default:"0" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages (Chat) Tab - Screenshot Match Revamp -->
+    <div class="tab-pane fade" id="messages" role="tabpanel">
+        <div class="message-container shadow-sm border rounded-4 bg-white overflow-hidden">
+                <div class="message-header selection-toolbar-header text-white" 
+                    style="display: none; padding: 0 1.5rem; align-items: center; height: 60px; z-index: 1100; background: #1e293b;">
+                    <div class="d-flex align-items-center gap-4">
+                        <button class="btn btn-link text-white p-0" onclick="exitSelectionMode()">
+                            <i class="fas fa-times fs-5"></i>
+                        </button>
+                        <span id="selection-count" class="fw-bold" style="font-size: 1.1rem;">0 selected</span>
+                    </div>
+                    <div id="selection-actions" class="ms-auto">
+                        <button class="btn btn-link text-white d-flex align-items-center justify-content-center" 
+                            id="delete-selected-btn" onclick="handleBulkDelete()" 
+                            style="width: 40px; height: 40px; border-radius: 50%; transition: background 0.2s;">
+                            <i class="fas fa-trash fs-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="message-header chat-normal-header"
+                    style="padding: 0.75rem 1.5rem; border-bottom: 1px solid #e2e8f0; background: #fff; display: flex; align-items: center; gap: 1rem;">
+                <div class="avatar-circle"
+                    style="width: 40px; height: 40px; background: #ffc107; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.1rem; flex-shrink: 0;">
+                    {{ case.client.first_name|first|upper }}
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <div class="fw-bold"
+                        style="font-size: 1.1rem; color: #111827; line-height: 1.2; margin-bottom: 2px;">
+                        {{ case.client.first_name }} {{ case.client.last_name }}
+                    </div>
+                    <div id="user-status-container" style="display: flex; align-items: center; gap: 6px;">
+                        <div id="status-dot"
+                            class="status-dot {% if case.client.is_online %}online bg-success{% else %}offline bg-secondary{% endif %}"
+                            style="width: 8px; height: 8px; border-radius: 50%;">
+                        </div>
+                        <span id="status-label"
+                            class="status-label {% if case.client.is_online %}online text-success{% else %}offline text-muted{% endif %}"
+                            style="font-size: 0.85rem; font-weight: 500; line-height: 1;">
+                            {% if case.client.is_online %}Online{% else %}Offline{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Chat Menu Dropdown -->
+                <div class="dropdown chat-options-dropdown ms-auto" style="position: relative;">
+                    <button class="btn btn-link text-muted p-2 header-dropdown-toggle" type="button"
+                        style="text-decoration: none; border: none; background: none; cursor: pointer;">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 header-dropdown-menu"
+                        style="border-radius: 12px; min-width: 180px; padding: 6px; right: 14px;">
+                        <li>
+                            <button type="button" class="dropdown-item d-flex align-items-center gap-3 py-2" onclick="event.preventDefault(); event.stopPropagation(); toggleSound();">
+                                <span class="dropdown-icon-wrapper"
+                                    style="width: 28px; display: flex; justify-content: center;">
+                                    <i class="fas fa-bell-slash" id="soundIconDropdown"
+                                        style="font-size: 0.9rem; color: #64748b;"></i>
+                                </span>
+                                <span id="soundTextDropdown" style="font-size: 0.9rem; font-weight: 500;">Mute
+                                    Chat</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="select-messages-btn" type="button" class="dropdown-item d-flex align-items-center gap-3 py-2">
+                                <span class="dropdown-icon-wrapper"
+                                    style="width: 28px; display: flex; justify-content: center;">
+                                    <i class="fas fa-check-square" style="font-size: 0.9rem; color: #64748b;"></i>
+                                </span>
+                                <span style="font-size: 0.9rem; font-weight: 500;">Select Messages</span>
+                            </button>
+                        </li>
+                        <li class="dropdown-divider-li" style="height: 1px; background: #f1f5f9; margin: 4px 8px;"></li>
+                        <li>
+                            <button type="button" class="dropdown-item d-flex align-items-center gap-3 py-2 text-danger"
+                                onclick="event.preventDefault(); event.stopPropagation(); handleClearChat()" style="color: #ef4444 !important;">
+                                <span class="dropdown-icon-wrapper"
+                                    style="width: 28px; display: flex; justify-content: center;">
+                                    <i class="fas fa-broom" style="font-size: 0.9rem; color: #ef4444;"></i>
+                                </span>
+                                <span style="font-size: 0.9rem; font-weight: 500;">Clear Chat</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Sound Toggle (Visible) -->
+                <button id="soundToggleBtn" onclick="toggleSound()"
+                    class="btn btn-sm btn-outline-secondary d-none d-md-flex align-items-center gap-2 ms-2"
+                    style="border-radius: 20px;">
+                    <i class="fas fa-bell" id="soundIcon" style="color: #10b981;"></i>
+                    <span id="soundText">Sound ON</span>
+                </button>
+            </div>
+
+            <div class="message-list p-4" id="chat-messages-box">
+                {% for msg in chat_messages %}
+                <div class="message-bubble-wrapper d-flex mb-3 {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %}"
+                    id="msg-{{ msg.id }}" data-created-at="{{ msg.created_at|date:'c' }}" onclick="handleMessageClick(event, '{{ msg.id }}')">
+                    
+                    <!-- Selection Checkbox -->
+                    <div class="selection-checkbox-container">
+                        <input type="checkbox" class="message-select-checkbox" data-msg-id="{{ msg.id }}" 
+                            onclick="event.stopPropagation();" onchange="updateSelectionCount();">
+                    </div>
+
+                    <div class="message-bubble p-3 {% if msg.sender == request.user %}sent{% else %}received{% endif %}"
+                        style="max-width: 65%; border-radius: 15px; position: relative;">
+                        <div class="message-text mb-1">{{ msg.content }}</div>
+
+                        <button class="msg-action-btn" onclick="toggleMsgDropdown(event, '{{ msg.id }}')">
+                            <i class="fas fa-chevron-down" style="font-size:0.65rem;"></i>
+                        </button>
+                        <div class="msg-dropdown" id="msg-dropdown-{{ msg.id }}">
+                            <button class="msg-drop-item" onclick="handleDeleteMessage('{{ msg.id }}', 'me')">
+                                <span class="msg-drop-icon" style="color:#64748b;"><i
+                                        class="fas fa-eye-slash"></i></span>
+                                Delete for me
+                            </button>
+                            {% if msg.sender == request.user %}
+                            <div class="msg-drop-divider"></div>
+                            <button class="msg-drop-item msg-drop-danger"
+                                onclick="handleDeleteMessage('{{ msg.id }}', 'everyone')">
+                                <span class="msg-drop-icon"><i class="fas fa-trash-alt"></i></span>
+                                Delete for everyone
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <div class="message-meta" style="font-size: 0.72rem; opacity: 0.7; text-align: right;">
+                            {{ msg.created_at|date:'h:i A' }}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 no-messages">
+                    <i class="far fa-comments fa-3x text-muted mb-3 opacity-25"></i>
+                    <p class="text-muted">No messages yet. Start the conversation!</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="message-input-area p-3 border-top">
+                <form id="chat-form" method="POST" action="{% url 'send_message' case.id %}"
+                    class="d-flex gap-2 align-items-center">
+                    {% csrf_token %}
+                    <input type="text" name="content" class="message-input form-control rounded-pill px-4"
+                        id="message-input" placeholder="Type a message..." required autocomplete="off"
+                        style="padding: 0.85rem 1.5rem; border: 1px solid #e2e8f0;">
+                    <button type="submit"
+                        class="send-btn btn btn-dark rounded-circle p-0 d-flex align-items-center justify-content-center"
+                        style="width: 45px; height: 45px; background: #0f172a; border: none;">
+                        <i class="fas fa-paper-plane"
+                            style="transform: rotate(45deg); margin-left: -3px; margin-top: -2px; font-size: 1.1rem; color: white;"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Tab -->
+    <div class="tab-pane fade" id="documents" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card-box">
+                    <h5 class="mb-4"><i class="fas fa-cloud-upload-alt me-2 text-primary"></i>Upload Document</h5>
+                    <form action="{% url 'lawyer_case_detail' case.id %}" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Document Title</label>
+                            <input type="text" name="title" class="form-control rounded-3"
+                                placeholder="e.g., Power of Attorney" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold">Select File</label>
+                            <input type="file" name="document" class="form-control rounded-3" required>
+                            <div class="form-text">PDF, DOCX, or JPG images allowed.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom w-100 py-3">
+                            <i class="fas fa-upload me-2"></i> Upload to Case File
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card-box overflow-hidden p-0">
+                    <div class="px-4 py-3 border-bottom bg-light">
+                        <h5 class="mb-0">Case Repository ({{ documents|length }})</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Document Name</th>
+                                    <th>Uploaded By</th>
+                                    <th>Date</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="file-icon me-3">
+                                                <i class="far fa-file-pdf text-danger fs-4"></i>
+                                            </div>
+                                            <span class="fw-bold">{{ doc.title }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if doc.uploaded_by == request.user %}
+                                        <span
+                                            class="badge bg-primary-subtle text-primary border border-primary">You</span>
+                                        {% else %}
+                                        <span
+                                            class="badge bg-secondary-subtle text-secondary border border-secondary">Client</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ doc.uploaded_at|date:"d M, Y" }}</td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary"
+                                                target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ doc.file.url }}" download class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            {% if doc.uploaded_by == request.user %}
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                onclick="confirmDeleteDocument('{{ doc.id }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        <i class="fas fa-folder-open fa-2x mb-2 opacity-25"></i>
+                                        <p>No documents found in this case repository.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointments Tab -->
+    <div class="tab-pane fade" id="appointments" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card-box">
+                    <h5 class="mb-4"><i class="fas fa-calendar-plus me-2 text-success"></i>Schedule Meeting</h5>
+                    <form action="{% url 'schedule_appointment' case.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Topic / Title</label>
+                            <input type="text" name="title" class="form-control rounded-3" placeholder="Case Discussion"
+                                required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-8">
+                                <label class="form-label small fw-bold">Date</label>
+                                <input type="date" name="date" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-bold">Time</label>
+                                <input type="time" name="time" class="form-control rounded-3" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Location / Link</label>
+                            <input type="text" name="location" class="form-control rounded-3"
+                                placeholder="Video Call or Office Address">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold">Notes (Optional)</label>
+                            <textarea name="notes" class="form-control rounded-3" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom w-100 py-3">
+                            <i class="fas fa-save me-2"></i> Book Appointment
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card-box">
+                    <h5 class="mb-4">Scheduled for Case ({{ appointments|length }})</h5>
+                    <div class="timeline-appointments">
+                        {% for appt in appointments %}
+                        <div
+                            class="appointment-item p-3 border rounded-3 mb-3 bg-white shadow-xs hover-shadow transition-all">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex gap-3">
+                                    <div class="date-box bg-light p-2 rounded text-center" style="min-width: 60px;">
+                                        <div class="h5 mb-0 fw-bold">{{ appt.datetime|date:"d" }}</div>
+                                        <small class="text-uppercase" style="font-size: 0.6rem;">
+                                            {{ appt.datetime|date:"M" }}
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ appt.title }}</h6>
+                                        <p class="text-muted small mb-0">
+                                            <i class="far fa-clock me-1"></i> {{ appt.datetime|date:'h:i A' }} ({{
+                                            appt.duration_minutes }} min)
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            <i class="fas fa-map-marker-alt me-1"></i> {{ appt.location|default:"TBD" }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <span
+                                    class="badge bg-{{ appt.status|default:'primary' }}-subtle text-{{ appt.status|default:'primary' }} border">
+                                    {{ appt.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5 text-muted border border-dashed rounded-3">
+                            <i class="far fa-calendar-times fa-2x mb-2 opacity-25"></i>
+                            <p>No appointments scheduled yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+
+<!-- Update Progress Modal -->
+<div class="modal fade" id="updateProgressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 overflow-hidden">
+            <div class="modal-header bg-primary text-white p-4">
+                <h5 class="modal-title fw-bold"><i class="fas fa-chart-line me-2"></i>Update Case Progress</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form action="{% url 'update_case_progress' case.id %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Progress Completion (%)</label>
+                        <input type="range" class="form-range" min="0" max="100" step="5" id="progressRange"
+                            name="progress_percentage" value="{{ case.progress_percentage }}">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">0%</small>
+                            <span class="badge bg-primary fs-6" id="rangeValue">{{ case.progress_percentage }}%</span>
+                            <small class="text-muted">100%</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Status Label</label>
+                        <input type="text" name="detailed_status" class="form-control py-2"
+                            value="{{ case.detailed_status }}"
+                            placeholder="e.g., Evidence Gathering, Written Argument Submitted">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Next Hearing Date</label>
+                        <input type="datetime-local" name="next_hearing_date" class="form-control"
+                            value="{{ case.next_hearing_date|date:'Y-m-d\TH:i' }}">
+                    </div>
+
+                    <div class="form-check form-switch p-3 bg-light rounded-3">
+                        <input class="form-check-input" type="checkbox" name="case_completed" value="true"
+                            id="completeSwitch">
+                        <label class="form-check-label fw-bold ps-2" for="completeSwitch">Mark Case as Completed</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3 border-0">
+                    <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom px-4">Save Progress Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+    /* Secondary Background Palette */
+    .secondary-bg {
+        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%) !important;
+        border-bottom: 4px solid #364d59 !important;
+    }
+
+    /* Chat Styling - Mirror Screenshot */
+    .message-container {
+        height: calc(100vh - 380px); /* Dynamic initial height */
+        min-height: 480px;
+        display: flex;
+        flex-direction: column;
+        transition: height 0.3s ease;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .message-list {
+        flex: 1;
+        overflow-y: auto;
+        background-color: #fff;
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 transparent;
+    }
+
+    .message-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .message-list::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 10px;
+        border: 2px solid #fff;
+    }
+
+    .message-bubble.sent {
+        background: #0f172a;
+        color: white;
+        border-radius: 18px 18px 0 18px !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .message-bubble.received {
+        background: #ffffff;
+        color: #1e293b;
+        border-radius: 18px 18px 18px 0 !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .message-bubble {
+        position: relative;
+        padding-right: 2.5rem !important;
+    }
+
+    .msg-action-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: none;
+        border: none;
+        color: inherit;
+        opacity: 0;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 0.8rem;
+        transition: opacity 0.2s;
+    }
+
+    .message-bubble:hover .msg-action-btn {
+        opacity: 0.7;
+    }
+
+    .msg-action-btn:hover {
+        opacity: 1 !important;
+    }
+
+    .msg-dropdown {
+        display: none;
+        position: absolute;
+        bottom: 28px;
+        right: 0;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        min-width: 195px;
+        z-index: 1000;
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        animation: dropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transform-origin: bottom right;
+    }
+
+    .msg-dropdown.show-down {
+        bottom: auto;
+        top: 28px;
+        transform-origin: top right;
+    }
+
+    .message-bubble.received .msg-dropdown {
+        right: auto;
+        left: 0;
+        transform-origin: bottom left;
+    }
+
+    .message-bubble.received .msg-dropdown.show-down {
+        transform-origin: top left;
+    }
+
+    .msg-dropdown.show {
+        display: block;
+    }
+
+    @keyframes dropIn {
+        from { opacity: 0; transform: translateY(8px) scale(0.95); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .msg-drop-item {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: none;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+    }
+
+    .msg-drop-item:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .msg-drop-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+
+    .msg-drop-danger {
+        color: #ef4444 !important;
+    }
+
+    .msg-drop-danger .msg-drop-icon {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .msg-drop-danger:hover {
+        background: #fef2f2;
+    }
+
+    .msg-drop-danger:hover .msg-drop-icon {
+        background: #fecaca;
+    }
+
+    .message-input:focus {
+        border-color: #cbd5e1 !important;
+        box-shadow: none !important;
+    }
+
+    /* Custom Navigation Tabs - Underline Style */
+    .custom-tabs-container .nav-tabs {
+        gap: 2rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .custom-tabs-container .nav-tabs .nav-link {
+        border: none;
+        padding: 1rem 0;
+        background: transparent;
+        color: #64748b;
+        font-weight: 600;
+        position: relative;
+        transition: color 0.3s;
+    }
+
+    .custom-tabs-container .nav-tabs .nav-link.active {
+        color: #111827;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .custom-tabs-container .nav-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #d4a742;
+        /* Premium Gold Underline */
+    }
+
+    .custom-tabs-container .nav-tabs .nav-link:hover {
+        color: #111827;
+    }
+
+    /* Custom Transitions */
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #364d59 0%, #2c3e48 100%);
+        border: none;
+        color: white;
+        transition: all 0.3s;
+    }
+
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: #fee2b3;
+    }
+
+    .shadow-xs {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    /* Animations */
+    .anime-slide-in {
+        animation: slideInX 0.6s ease-out;
+    }
+
+    .anime-slide-up {
+        animation: slideUpY 0.7s ease-out;
+    }
+
+    .anime-fade-in {
+        animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes slideInX {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideUpY {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .rotate-15 {
+        transform: rotate(15deg);
+    }
+</style>
+
+<!-- Scripts -->
+<script>
+    // --- Global Messaging State ---
+    let isSelectionMode = false;
+    let isSoundMuted = false;
+    try {
+        isSoundMuted = localStorage.getItem('globalChatMuted') === 'true';
+    } catch (e) {
+        console.warn('localStorage not accessible', e);
+    }
+
+    // --- Message Selection Logic ---
+    function enterSelectionMode() {
+        console.log('Selection mode activation initiated');
+        try {
+            isSelectionMode = true;
+            const container = document.querySelector('.message-container');
+            const nh = document.querySelector('.chat-normal-header');
+            const sh = document.querySelector('.selection-toolbar-header');
+
+            if (container) {
+                container.classList.add('selection-mode');
+            }
+
+            if (nh) nh.style.setProperty('display', 'none', 'important');
+            if (sh) sh.style.setProperty('display', 'flex', 'important');
+            
+            updateSelectionCount();
+
+            // Force close all dropdowns
+            document.querySelectorAll('.header-dropdown-menu').forEach(m => m.classList.remove('show'));
+            document.querySelectorAll('.msg-dropdown').forEach(m => m.classList.remove('show'));
+            
+        } catch (err) {
+            console.error('Error entering selection mode:', err);
+        }
+    }
+
+    function exitSelectionMode() {
+        isSelectionMode = false;
+        const container = document.querySelector('.message-container');
+        if (container) container.classList.remove('selection-mode');
+        
+        const nh = document.querySelector('.chat-normal-header');
+        const sh = document.querySelector('.selection-toolbar-header');
+        if (nh) nh.style.setProperty('display', 'flex', 'important');
+        if (sh) sh.style.setProperty('display', 'none', 'important');
+        
+        document.querySelectorAll('.message-select-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        document.querySelectorAll('.message-bubble-wrapper').forEach(w => {
+            w.classList.remove('selected');
+        });
+    }
+
+    function handleMessageClick(event, msgId) {
+        if (!isSelectionMode) return;
+        
+        const wrapper = document.getElementById(`msg-${msgId}`);
+        if (!wrapper) return;
+
+        const checkbox = wrapper.querySelector('.message-select-checkbox');
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) {
+                wrapper.classList.add('selected');
+            } else {
+                wrapper.classList.remove('selected');
+            }
+        }
+        
+        updateSelectionCount();
+    }
+
+    function updateSelectionCount() {
+        // Query all checkboxes with the class
+        const allCheckboxes = document.querySelectorAll('.message-select-checkbox');
+        // Filter for those that are explicitly checked in the DOM
+        const checkedCheckboxes = Array.from(allCheckboxes).filter(cb => cb.checked);
+        const count = checkedCheckboxes.length;
+        
+        console.log(`Updating selection count. Found ${allCheckboxes.length} total checkboxes, ${count} checked.`);
+        
+        const countEl = document.getElementById('selection-count');
+        const deleteBtn = document.getElementById('delete-selected-btn');
+        
+        if (countEl) {
+            countEl.textContent = `${count} selected`;
+        }
+        
+        if (deleteBtn) {
+            if (count > 0) {
+                deleteBtn.style.opacity = '1';
+                deleteBtn.style.pointerEvents = 'auto';
+                deleteBtn.style.cursor = 'pointer';
+            } else {
+                deleteBtn.style.opacity = '0.3';
+                deleteBtn.style.pointerEvents = 'none';
+            }
+        }
+
+        // Sync wrapper 'selected' classes
+        allCheckboxes.forEach(cb => {
+            const wrapper = cb.closest('.message-bubble-wrapper');
+            if (wrapper) {
+                if (cb.checked) {
+                    wrapper.classList.add('selected');
+                } else {
+                    wrapper.classList.remove('selected');
+                }
+            }
+        });
+    }
+
+    function handleBulkDelete() {
+        const checked = document.querySelectorAll('.message-select-checkbox:checked');
+        if (checked.length === 0) return;
+
+        const msgIds = Array.from(checked).map(cb => cb.getAttribute('data-msg-id'));
+        
+        showDeleteModal(
+            `Delete ${msgIds.length} Messages?`,
+            'Are you sure you want to delete the selected messages for yourself?',
+            msgIds, 'bulk', false
+        );
+
+        // Override confirm button for bulk delete
+        document.getElementById('deleteModalConfirm').onclick = function() {
+            closeDeleteModal();
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    'action': 'delete_messages_bulk',
+                    'message_ids': msgIds
+                }));
+            }
+            exitSelectionMode();
+        };
+    }
+
+    // Explicitly expose to window
+    window.enterSelectionMode = enterSelectionMode;
+    window.exitSelectionMode = exitSelectionMode;
+    window.handleMessageClick = handleMessageClick;
+    window.updateSelectionCount = updateSelectionCount;
+    window.handleBulkDelete = handleBulkDelete;
+
+    // --- Sound Logic ---
+    function toggleSound() {
+        isSoundMuted = !isSoundMuted;
+        try {
+            localStorage.setItem('globalChatMuted', isSoundMuted);
+        } catch (e) {}
+        updateSoundUI();
+    }
+
+    function updateSoundUI() {
+        const icon = document.getElementById('soundIcon');
+        const text = document.getElementById('soundText');
+        const dropdownIcon = document.getElementById('soundIconDropdown');
+        const dropdownText = document.getElementById('soundTextDropdown');
+
+        if (isSoundMuted) {
+            // Main Button shows Muted
+            if (icon) {
+                icon.className = 'fas fa-bell-slash text-danger';
+                icon.style.color = '';
+            }
+            if (text) text.innerText = 'Muted';
+
+            // Dropdown shows "Sound ON" or "Unmute Chat"
+            if (dropdownIcon) {
+                dropdownIcon.className = 'fas fa-bell';
+                dropdownIcon.style.color = '#10b981';
+            }
+            if (dropdownText) dropdownText.innerText = 'Sound ON';
+        } else {
+            // Main Button shows Sound ON
+            if (icon) {
+                icon.className = 'fas fa-bell';
+                icon.style.color = '#10b981';
+            }
+            if (text) text.innerText = 'Sound ON';
+
+            // Dropdown shows "Mute Chat"
+            if (dropdownIcon) {
+                dropdownIcon.className = 'fas fa-bell-slash';
+                dropdownIcon.style.color = '#64748b';
+            }
+            if (dropdownText) dropdownText.innerText = 'Mute Chat';
+        }
+    }
+
+    // Tab switching based on URL parameters
+    document.addEventListener('DOMContentLoaded', function () {
+        // Restore sound icon state
+        updateSoundUI();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab && typeof bootstrap !== 'undefined') {
+            const triggerEl = document.querySelector(`#${tab}-tab`);
+            if (triggerEl) {
+                try {
+                    const tabInstance = new bootstrap.Tab(triggerEl);
+                    tabInstance.show();
+                } catch (e) {
+                    console.warn('Bootstrap tab error:', e);
+                }
+            }
+        }
+
+        // Initial adjustment
+        if (tab === 'messages') {
+            setTimeout(adjustMessagingView, 300);
+        }
+ 
+        // Auto-adjust messaging view when tab is clicked
+        const messagesTabBtn = document.getElementById('messages-tab');
+        if (messagesTabBtn) {
+            messagesTabBtn.addEventListener('shown.bs.tab', function () {
+                adjustMessagingView();
+            });
+        }
+ 
+        window.addEventListener('resize', adjustMessagingView);
+
+        // Bind Select Messages button
+        const selectBtn = document.getElementById('select-messages-btn');
+        if (selectBtn) {
+            selectBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                enterSelectionMode();
+            });
+        }
+
+        // Progress range display
+        const range = document.getElementById('progressRange');
+        const rangeVal = document.getElementById('rangeValue');
+        if (range && rangeVal) {
+            range.addEventListener('input', function () {
+                rangeVal.textContent = this.value + '%';
+            });
+        }
+
+        // Add Esc key to exit selection mode
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isSelectionMode) {
+                exitSelectionMode();
+            }
+        });
+
+        // --- AJAX Message Submission (Prevent Page Refresh) ---
+        const chatForm = document.getElementById('chat-form');
+        if (chatForm) {
+            chatForm.addEventListener('submit', function (e) {
+                e.preventDefault(); // Stop page refresh
+                
+                const input = document.getElementById('message-input');
+                const content = input.value.trim();
+                
+                if (!content) return;
+
+                const formData = new FormData(chatForm);
+                
+                // Clear input immediately for better UX
+                input.value = '';
+
+                fetch(chatForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Message send failed');
+                        // Optional: restore input if failed
+                        // input.value = content; 
+                    }
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                });
+            });
+        }
+    });
+ 
+    function adjustMessagingView() {
+        const container = document.querySelector('.message-container');
+        const tabsBox = document.querySelector('.custom-tabs-container');
+        if (!container || !tabsBox) return;
+ 
+        // Only trigger if messages tab is actually visible
+        if (!document.getElementById('messages').classList.contains('active')) return;
+ 
+        // 1. Scroll the page so the tabs are neatly at the top
+        const tabsOffset = tabsBox.offsetTop - 10;
+        window.scrollTo({
+            top: tabsOffset,
+            behavior: 'smooth'
+        });
+ 
+        // 2. Adjust container height to fill exactly the rest of the screen
+        // We calculate: Viewport Height - MarginTop of ChatBox relative to viewport
+        setTimeout(() => {
+            const viewportHeight = window.innerHeight;
+            const rect = tabsBox.getBoundingClientRect();
+            // The available space is the screen height minus the bottom position of the tabs
+            const availableHeight = viewportHeight - rect.bottom - 40; // 40px for bottom padding/margin
+            
+            if (availableHeight > 450) {
+                container.style.height = availableHeight + 'px';
+            } else {
+                container.style.height = '500px'; // Moderate fallback for very small heights
+            }
+ 
+            // 3. Ensure list is at bottom
+            const chatBox = document.getElementById('chat-messages-box');
+            if (chatBox) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }, 400); // Small delay to allow scroll to start
+    }
+
+    function confirmDeleteDocument(docId) {
+        if (confirm("Are you sure you want to delete this document? This cannot be undone.")) {
+            window.location.href = `/lawyer/document/${docId}/delete/everyone/`;
+        }
+    }
+
+    // WebSocket Integration for Chat (Simple Version)
+    const caseId = "{{ case.id }}";
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const chatSocket = new WebSocket(
+        wsScheme + '://' + window.location.host + '/ws/chat/' + caseId + '/'
+    );
+
+    chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'chat_message') {
+            appendMessage(data);
+        } else if (data.type === 'document_uploaded') {
+            addDocumentToTable(data.doc);
+        } else if (data.type === 'document_deleted') {
+            removeDocumentFromTable(data.document_id);
+        } else if (data.type === 'user_status_update') {
+            updateUserStatus(data.user_id, data.status);
+        } else if (data.type === 'message_deleted') {
+            const msgElement = document.getElementById(`msg-${data.message_id}`);
+            if (msgElement) {
+                if (data.mode === 'everyone') {
+                    const contentDiv = msgElement.querySelector('.message-text');
+                    if (contentDiv) {
+                        contentDiv.innerHTML = '<i class="fas fa-ban me-1 small opacity-50"></i> <span class="fst-italic opacity-50">This message was deleted</span>';
+                    }
+                    const dropdown = msgElement.querySelector('.msg-dropdown');
+                    const toggleBtn = msgElement.querySelector('.msg-action-btn');
+                    if (dropdown) dropdown.remove();
+                    if (toggleBtn) toggleBtn.remove();
+                } else {
+                    msgElement.style.transition = 'all 0.3s ease';
+                    msgElement.style.opacity = '0';
+                    msgElement.style.transform = 'translateY(10px)';
+                    setTimeout(() => msgElement.remove(), 300);
+                }
+            }
+        } else if (data.type === 'chat_cleared') {
+            const chatBox = document.getElementById('chat-messages-box');
+            if (chatBox) {
+                chatBox.innerHTML = `
+                    <div class="text-center py-5 no-messages">
+                        <i class="far fa-comments fa-3x text-muted mb-3 opacity-25"></i>
+                        <p class="text-muted">Chat cleared. Start a new conversation!</p>
+                    </div>
+                `;
+            }
+        } else if (data.type === 'messages_bulk_deleted') {
+            data.message_ids.forEach(id => {
+                const msgElement = document.getElementById(`msg-${id}`);
+                if (msgElement) {
+                    msgElement.style.transition = 'all 0.3s ease';
+                    msgElement.style.opacity = '0';
+                    msgElement.style.transform = 'translateY(10px)';
+                    setTimeout(() => msgElement.remove(), 300);
+                }
+            });
+        }
+    };
+
+    function appendMessage(data) {
+        const chatBox = document.getElementById('chat-messages-box');
+        const isMe = data.sender_id == "{{ request.user.id }}";
+
+        const noMsg = chatBox.querySelector('.no-messages');
+        if (noMsg) noMsg.remove();
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message-bubble-wrapper d-flex mb-3 ${isMe ? 'justify-content-end' : 'justify-content-start'} anime-fade-in`;
+        msgDiv.id = `msg-${data.message_id}`;
+        msgDiv.dataset.createdAt = new Date().toISOString();
+        msgDiv.onclick = (e) => handleMessageClick(e, data.message_id);
+
+        msgDiv.innerHTML = `
+            <div class="selection-checkbox-container">
+                <input type="checkbox" class="message-select-checkbox" data-msg-id="${data.message_id}" onclick="event.stopPropagation()">
+            </div>
+            <div class="message-bubble p-3 ${isMe ? 'sent' : 'received'}" style="max-width: 65%; border-radius: 15px; position: relative;">
+                <div class="message-text mb-1">${data.message}</div>
+                
+                <button class="msg-action-btn" onclick="toggleMsgDropdown(event, ${data.message_id})">
+                    <i class="fas fa-chevron-down" style="font-size:0.65rem;"></i>
+                </button>
+                <div class="msg-dropdown" id="msg-dropdown-${data.message_id}">
+                    <button class="msg-drop-item" onclick="handleDeleteMessage(${data.message_id}, 'me')">
+                        <span class="msg-drop-icon" style="color:#64748b;"><i class="fas fa-eye-slash"></i></span>
+                        Delete for me
+                    </button>
+                    ${isMe ? `
+                    <div class="msg-drop-divider"></div>
+                    <button class="msg-drop-item msg-drop-danger" onclick="handleDeleteMessage(${data.message_id}, 'everyone')">
+                        <span class="msg-drop-icon"><i class="fas fa-trash-alt"></i></span>
+                        Delete for everyone
+                    </button>
+                    ` : ''}
+                </div>
+
+                <div class="message-meta" style="font-size: 0.72rem; opacity: 0.7; text-align: right;">${data.timestamp}</div>
+            </div>
+        `;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addDocumentToTable(doc) {
+        const tbody = document.querySelector('#documents tbody');
+        const noDocs = tbody.querySelector('.text-center.py-5');
+        if (noDocs) noDocs.closest('tr').remove();
+
+        const isMe = doc.uploaded_by_id == "{{ request.user.id }}";
+        const tr = document.createElement('tr');
+        tr.id = `doc-row-${doc.id}`;
+        tr.className = 'anime-fade-in';
+        tr.innerHTML = `
+            <td class="ps-4">
+                <div class="d-flex align-items-center">
+                    <div class="file-icon me-3">
+                        <i class="far fa-file-pdf text-danger fs-4"></i>
+                    </div>
+                    <span class="fw-bold">${doc.title}</span>
+                </div>
+            </td>
+            <td>
+                <span class="badge ${isMe ? 'bg-primary-subtle text-primary border border-primary' : 'bg-secondary-subtle text-secondary border border-secondary'}">
+                    ${isMe ? 'You' : 'Client'}
+                </span>
+            </td>
+            <td class="small">${doc.uploaded_at}</td>
+            <td class="text-end pe-4">
+                <div class="btn-group">
+                    <a href="${doc.file_url}" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="${doc.file_url}" download class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-download"></i>
+                    </a>
+                    ${isMe ? `<button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteDocument('${doc.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>` : ''}
+                </div>
+            </td>
+        `;
+        tbody.prepend(tr);
+    }
+
+    function removeDocumentFromTable(docId) {
+        const row = document.getElementById(`doc-row-${docId}`);
+        if (row) {
+            row.classList.add('opacity-0');
+            setTimeout(() => row.remove(), 500);
+        }
+    }
+
+    function updateUserStatus(userId, status) {
+        // Only update if it's the OTHER user
+        if (userId != "{{ request.user.id }}") {
+            const statusDot = document.getElementById('status-dot');
+            const statusLabel = document.getElementById('status-label');
+
+            if (statusDot && statusLabel) {
+                if (status === 'online') {
+                    statusDot.classList.add('online');
+                    statusDot.style.background = '#10b981';
+                    statusLabel.classList.add('online');
+                    statusLabel.style.color = '#10b981';
+                    statusLabel.textContent = 'Online';
+                } else {
+                    statusDot.classList.remove('online');
+                    statusDot.style.background = '#94a3b8';
+                    statusLabel.classList.remove('online');
+                    statusLabel.style.color = '#64748b';
+                    statusLabel.textContent = 'Offline';
+                }
+            }
+        }
+    }
+
+    function toggleMsgDropdown(event, msgId) {
+        event.stopPropagation();
+        const dropdown = document.getElementById(`msg-dropdown-${msgId}`);
+        const allDropdowns = document.querySelectorAll('.msg-dropdown');
+
+        const isShow = dropdown.classList.contains('show');
+        allDropdowns.forEach(d => d.classList.remove('show', 'show-down'));
+
+        if (!isShow) {
+            // Check for space above
+            const rect = dropdown.parentElement.getBoundingClientRect();
+            const container = document.getElementById('chat-messages-box');
+            const containerRect = container.getBoundingClientRect();
+            
+            // If the message bubble is near the top of the chat list, show dropdown below
+            if (rect.top - containerRect.top < 150) {
+                dropdown.classList.add('show-down');
+            }
+            dropdown.classList.add('show');
+        }
+    }
+
+    function handleDeleteMessage(msgId, mode) {
+        if (mode === 'everyone') {
+            const msgElement = document.getElementById(`msg-${msgId}`);
+            if (msgElement && msgElement.dataset.createdAt) {
+                const createdAt = new Date(msgElement.dataset.createdAt);
+                const now = new Date();
+                const diffMinutes = (now - createdAt) / (1000 * 60);
+                if (diffMinutes > 2) {
+                    showDeleteModal(
+                        'Cannot Delete',
+                        'This message was sent more than 2 minutes ago and can no longer be deleted for everyone.',
+                        null, null, true
+                    );
+                    return;
+                }
+            }
+            showDeleteModal(
+                'Delete for Everyone?',
+                'This message will be permanently removed for all participants in this conversation.',
+                msgId, 'everyone', false
+            );
+        } else {
+            doDeleteMessage(msgId, 'me');
+        }
+    }
+
+    function showDeleteModal(title, body, msgId, mode, infoOnly) {
+        document.getElementById('deleteModalTitle').textContent = title;
+        document.getElementById('deleteModalBody').textContent = body;
+        const confirmBtn = document.getElementById('deleteModalConfirm');
+        if (infoOnly) {
+            confirmBtn.style.display = 'none';
+        } else {
+            confirmBtn.style.display = '';
+            confirmBtn.onclick = function () {
+                closeDeleteModal();
+                doDeleteMessage(msgId, mode);
+            };
+        }
+        document.getElementById('msgDeleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('msgDeleteModal').classList.remove('show');
+    }
+
+    function doDeleteMessage(msgId, mode) {
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'action': 'delete_message',
+                'message_id': msgId,
+                'mode': mode
+            }));
+        } else {
+            showDeleteModal('Connection Error', 'Socket connection lost. Please refresh the page.', null, null, true);
+        }
+    }
+
+    // Close and Toggle Dropdowns (Event Delegation)
+    document.addEventListener('click', function (e) {
+        const msgToggle = e.target.closest('.msg-action-btn');
+        const headerToggle = e.target.closest('.header-dropdown-toggle');
+
+        // Handle Header Dropdown Toggle
+        if (headerToggle) {
+            e.preventDefault();
+            e.stopPropagation();
+            const menu = headerToggle.nextElementSibling;
+            const isShow = menu.classList.contains('show');
+
+            // Close all dropdowns first
+            document.querySelectorAll('.header-dropdown-menu').forEach(m => m.classList.remove('show'));
+            document.querySelectorAll('.msg-dropdown').forEach(m => m.classList.remove('show'));
+
+            if (!isShow) {
+                menu.classList.add('show');
+            }
+            return;
+        }
+
+        // Close all if clicked outside
+        if (!e.target.closest('.msg-dropdown') && !e.target.closest('.header-dropdown-menu')) {
+            document.querySelectorAll('.msg-dropdown').forEach(d => d.classList.remove('show'));
+            document.querySelectorAll('.header-dropdown-menu').forEach(d => d.classList.remove('show'));
+        }
+    });
+
+    // Close delete modal on overlay click
+    document.getElementById('msgDeleteModal').addEventListener('click', function (e) {
+        if (e.target === this) closeDeleteModal();
+    });
+
+    function handleClearChat() {
+        showDeleteModal(
+            'Clear the entire chat?',
+            'This will hide all messages from your view. The other participant will still see them. This cannot be undone.',
+            null, 'clear', false
+        );
+        // Overwrite confirm button for clear chat
+        document.getElementById('deleteModalConfirm').onclick = function () {
+            closeDeleteModal();
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    'action': 'clear_chat'
+                }));
+            }
+        };
+    }
+
+    // --- End of Messaging Logic ---
+
+</script>
+
+<!-- Professional Delete Confirmation Modal -->
+<div id="msgDeleteModal" class="msg-modal-overlay">
+    <div class="msg-modal-box">
+        <div class="msg-modal-icon">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h5 class="msg-modal-title" id="deleteModalTitle">Delete Message?</h5>
+        <p class="msg-modal-body" id="deleteModalBody">This action cannot be undone.</p>
+        <div class="msg-modal-actions">
+            <button class="msg-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+            <button class="msg-modal-confirm" id="deleteModalConfirm">Delete</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* --- Message Dropdown --- */
+    .msg-action-btn {
+        position: absolute;
+        bottom: 6px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s, background 0.2s;
+        color: inherit;
+        padding: 0;
+    }
+
+    .message-bubble:hover .msg-action-btn {
+        opacity: 1;
+    }
+
+    .msg-action-btn:hover {
+        background: rgba(0, 0, 0, 0.15);
+    }
+
+    .msg-drop-divider {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 2px 0;
+    }
+
+    /* --- Selection Mode Styles --- */
+    .selection-checkbox-container {
+        display: none;
+        align-items: center;
+        margin: 0 15px;
+        transition: all 0.3s ease;
+    }
+
+    .selection-mode .selection-checkbox-container {
+        display: flex;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    /* WhatsApp-style checkbox */
+    .message-select-checkbox {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #94a3b8;
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+
+    .message-select-checkbox:checked {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+
+    .message-select-checkbox:checked::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        color: white;
+        font-size: 11px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .selection-mode .message-bubble-wrapper {
+        cursor: pointer;
+        transition: background 0.2s;
+        border-radius: 12px;
+        position: relative;
+    }
+
+    .selection-mode .message-bubble-wrapper:hover {
+        background: rgba(16, 185, 129, 0.04);
+    }
+
+    .selection-mode .message-bubble-wrapper.selected {
+        background: rgba(16, 185, 129, 0.08);
+    }
+
+    .selection-mode .message-bubble-wrapper.justify-content-end {
+        flex-direction: row; /* For right-aligned messages, keep checkbox on left */
+    }
+
+    .selection-mode .message-bubble-wrapper.justify-content-end .selection-checkbox-container {
+        order: -1; /* Ensure checkbox is on the left even for sent messages */
+    }
+
+    /* Disable normal message actions in selection mode */
+    .selection-mode .msg-action-btn {
+        display: none !important;
+    }
+
+    /* WhatsApp style: disable text selection and highlight the bubble slightly differently */
+    .selection-mode .message-text {
+        user-select: none;
+        pointer-events: none;
+    }
+
+    /* Ensure checkbox stays consistent */
+    .selection-mode .message-select-checkbox {
+        flex-shrink: 0;
+        z-index: 10;
+    }
+
+    /* --- Delete Confirmation Modal --- */
+    .msg-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .msg-modal-overlay.show {
+        display: flex;
+    }
+
+    .msg-modal-box {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 2.25rem 2rem;
+        width: 90%;
+        max-width: 380px;
+        text-align: center;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+        animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalPop {
+        from {
+            opacity: 0;
+            transform: scale(0.88);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .msg-modal-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #fee2e2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.25rem;
+        font-size: 1.4rem;
+        color: #ef4444;
+    }
+
+    .msg-modal-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+    }
+
+    .msg-modal-body {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin-bottom: 1.75rem;
+        line-height: 1.5;
+    }
+
+    .msg-modal-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .msg-modal-cancel,
+    .msg-modal-confirm {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border-radius: 10px;
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .msg-modal-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .msg-modal-cancel:hover {
+        background: #e2e8f0;
+    }
+
+    .msg-modal-confirm {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+    }
+
+    .msg-modal-confirm:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.45);
+        transform: translateY(-1px);
+    }
+
+    /* Header Dropdown Support */
+    .header-dropdown-menu {
+        display: none;
+        border-radius: 12px;
+        padding: 0.5rem;
+        min-width: 185px;
+        position: absolute;
+        right: 0;
+        background: white;
+        list-style: none;
+        z-index: 1000;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        border: 1px solid #f1f5f9;
+        animation: dropIn 0.2s ease-out;
+        margin-top: 5px;
+    }
+
+    .header-dropdown-menu.show {
+        display: block;
+    }
+
+    .header-dropdown-menu .dropdown-item {
+        border-radius: 8px;
+        width: 100%;
+        border: none;
+        background: none;
+        cursor: pointer;
+        text-align: left;
+        padding: 0.65rem 0.8rem;
+        font-size: 0.9rem;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .header-dropdown-menu .dropdown-item:hover {
+        background: #f8fafc;
+    }
+
+    .header-dropdown-menu .dropdown-item.text-danger:hover {
+        background: #fff5f5;
+    }
+
+    .header-dropdown-menu .dropdown-divider {
+        margin: 0.5rem 0;
+        border: none;
+        border-top: 1px solid #f1f5f9;
+    }
+</style>
+{% endblock %}

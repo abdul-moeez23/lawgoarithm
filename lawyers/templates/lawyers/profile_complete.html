@@ -1,0 +1,271 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}Complete Your Profile{% endblock %}
+{% block page_title %}Complete Your Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-2">Complete Your Profile</h2>
+        <p class="text-muted mb-4">Please provide the following information to complete your lawyer profile. This
+            information will be reviewed by our admin team.</p>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <!-- Profile Picture Upload -->
+<div class="card-box mb-4">
+    <h5><i class="fas fa-camera me-2"></i>Profile Picture</h5>
+
+    <div class="text-center mb-3">
+        <img id="previewImg" 
+             src="https://via.placeholder.com/120" 
+             class="rounded-circle border"
+             style="width: 120px; height: 120px; object-fit: cover;">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">
+            <i class="fas fa-image text-muted me-2"></i>Select Profile Picture
+            <span class="text-danger">*</span>
+        </label>
+        <input type="file" class="form-control" name="profile_picture"
+               accept="image/*" onchange="previewFile(this)" required>
+        <small class="text-muted">Allowed formats: JPG, PNG. Maximum size 2MB.</small>
+    </div>
+</div>
+
+    <!-- Basic Professional Information -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-user-tie me-2"></i>Professional Information</h5>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-id-card text-muted me-2"></i>Bar Enrollment Number
+                    <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" name="bar_enrollment" placeholder="e.g., BAR-12345-2020"
+                    required>
+                <small class="text-muted">Your official bar council enrollment number</small>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-briefcase text-muted me-2"></i>Years of Experience
+                    <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" name="experience" min="0" max="50" placeholder="e.g., 5"
+                    required>
+                <small class="text-muted">Total years of legal practice</small>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-map-marker-alt text-muted me-2"></i>City
+                    <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" name="city" required>
+                    <option value="">-- Select City --</option>
+                    {% for city in cities %}
+                    <option value="{{ city.id }}">{{ city.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Fee Band removed -->
+            <!-- <div class="col-md-6 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-money-bill-wave text-muted me-2"></i>Fee Band
+                    <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" name="fee_band" required>
+                    <option value="">-- Select Fee Band --</option>
+                    {% for band in fee_bands %}
+                    <option value="{{ band.id }}">{{ band.label }} (Rs {{ band.min_fee}} - Rs {{ band.max_fee }})</option>
+                    {% endfor %}
+                </select>
+            </div> -->
+        </div>
+    </div>
+
+    <!-- Courts -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-landmark me-2"></i>Courts You Practice In</h5>
+        <p class="text-muted small mb-3">Select all courts where you are authorized to practice</p>
+
+        <div class="row">
+            {% for court in courts %}
+            <div class="col-md-6 col-lg-4 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="courts" value="{{ court.id }}"
+                        id="court_{{ court.id }}">
+                    <label class="form-check-label" for="court_{{ court.id }}">
+                        {{ court.name }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Languages -->
+    <div class="card-box mb-4">
+        
+        {% comment %} <h5><i class="fas fa-language me-2"></i>Languages</h5>
+        <p class="text-muted small mb-3">Select all languages you can communicate in</p> {% endcomment %}
+
+        <div class="row">
+            {% for language in languages %}
+            <div class="col-md-6 col-lg-3 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="languages" value="{{ language.id }}"
+                        id="lang_{{ language.id }}">
+                    <label class="form-check-label" for="lang_{{ language.id }}">
+                        {{ language.name }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Practice Areas -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-balance-scale me-2"></i>Practice Areas</h5>
+        <p class="text-muted small mb-3">Select all areas of law you specialize in</p>
+
+        <div class="row">
+            {% for area in practice_areas %}
+            <div class="col-md-6 col-lg-4 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="practice_areas" value="{{ area.id }}"
+                        id="area_{{ area.id }}">
+                    <label class="form-check-label" for="area_{{ area.id }}">
+                        {{ area.name }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Verification Documents -->
+    <div class="card-box mb-4">
+        <h5><i class="fas fa-file-upload me-2"></i>Verification Documents</h5>
+        <p class="text-muted small mb-3">Upload your credentials for verification (Bar Council Certificate, CNIC, etc.)
+        </p>
+
+        <div class="mb-3">
+            <label class="form-label">
+                <i class="fas fa-paperclip text-muted me-2"></i>Upload Documents
+                <span class="text-danger">*</span>
+            </label>
+            <input type="file" class="form-control" name="verification_documents" accept=".pdf,.jpg,.jpeg,.png"
+                multiple>
+            <small class="text-muted">Accepted formats: PDF, JPG, PNG. You can select multiple files.</small>
+        </div>
+
+        <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Required Documents:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Bar Council Enrollment Certificate</li>
+                <li>CNIC/National ID Card</li>
+                <li>Educational Certificates (LLB/LLM)</li>
+                <li>Any other relevant credentials</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary-custom btn-lg px-5">
+            <i class="fas fa-check-circle me-2"></i>Submit Profile for Verification
+        </button>
+        <p class="text-muted small mt-3">
+            <i class="fas fa-clock me-1"></i>Your profile will be reviewed by our admin team within 24-48 hours
+        </p>
+    </div>
+</form>
+
+<script>
+function previewFile(input) {
+    let file = input.files[0];
+    if (file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById("previewImg").src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+</script>
+
+<style>
+    .form-label {
+        font-weight: 500;
+        color: #364d59;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control,
+    .form-select {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #364d59;
+        box-shadow: 0 0 0 0.2rem rgba(54, 77, 89, 0.15);
+    }
+
+    .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        margin-top: 0.15em;
+        border: 2px solid #dee2e6;
+        cursor: pointer;
+    }
+
+    .form-check-input:checked {
+        background-color: #364d59;
+        border-color: #364d59;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        margin-left: 0.5rem;
+        color: #495057;
+    }
+
+    .alert-info {
+        background-color: #e8f4f8;
+        border: 1px solid #bee5eb;
+        border-radius: 10px;
+        color: #0c5460;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+
+    small.text-muted {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-lg {
+        padding: 12px 40px;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}

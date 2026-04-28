@@ -1,0 +1,73 @@
+{% extends 'clients/dashboard_base.html' %}
+
+{% block title %}Hired Lawyers - Lawgorithm{% endblock %}
+{% block header_title %}My Hired Lawyers{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h3 style="margin-bottom: 0.5rem; color: var(--primary-navy);">Managed Legal Representation</h3>
+            <p style="color: var(--text-gray); font-size: 0.95rem;">Review and manage the lawyers currently handling your active cases.</p>
+        </div>
+        <div class="badge badge-success" style="padding: 0.75rem 1.25rem; font-size: 0.9rem; border-radius: 10px;">
+            <i class="fas fa-user-tie me-2"></i> {{ hired_interactions.count }} Hired
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem;">
+        {% for interaction in hired_interactions %}
+        <div class="card" style="border: 1px solid var(--border-color); padding: 1.5rem; transition: transform 0.2s; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; right: 0; padding: 0.5rem 1rem; background: #f0fdf4; color: #16a34a; font-size: 0.75rem; font-weight: 700; border-bottom-left-radius: 12px;">
+                ACTIVE REPRESENTATION
+            </div>
+            
+            <div style="display: flex; gap: 1.5rem; align-items: flex-start; margin-top: 0.5rem;">
+                <div class="avatar" style="width: 70px; height: 70px; font-size: 1.5rem; flex-shrink: 0; background-color: #f1f5f9; color: var(--primary-navy);">
+                    {% if interaction.lawyer.profile_picture %}
+                    <img src="{{ interaction.lawyer.profile_picture.url }}" alt="" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                    {{ interaction.lawyer.user.first_name|make_list|first|upper }}
+                    {% endif %}
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="font-size: 1.25rem; margin-bottom: 0.25rem; color: var(--primary-navy);">{{ interaction.lawyer.user.get_full_name }}</h4>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">
+                        {{ interaction.lawyer.experience_years }} Years Experience • {{ interaction.lawyer.city.name }}
+                    </p>
+                    
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                        <span style="display: block; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 0.5rem;">Assigned Case</span>
+                        <h5 style="margin: 0; color: var(--primary-navy);">{{ interaction.case.title }}</h5>
+                        <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="badge" style="background: #fef3c7; color: #92400e;">{{ interaction.lawyer.fee_band.name|default:"Flexible" }}</span>
+                            {% if interaction.lawyer.fee_band %}
+                            <span style="font-size: 0.8rem; color: #64748b;">${{ interaction.lawyer.fee_band.min_fee }} - ${{ interaction.lawyer.fee_band.max_fee }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <a href="{% url 'case_detail' interaction.case.id %}" class="btn-primary" style="text-align: center; font-size: 0.85rem;">
+                            <i class="fas fa-comments"></i> Message
+                        </a>
+                        <a href="{% url 'case_detail' interaction.case.id %}" class="btn-outline" style="text-align: center; font-size: 0.85rem;">
+                            <i class="fas fa-file-invoice"></i> Documents
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 5rem 2rem; border: 2px dashed var(--border-color); border-radius: 20px;">
+            <div style="font-size: 4rem; color: #cbd5e1; margin-bottom: 1.5rem;"><i class="fas fa-user-slash"></i></div>
+            <h3 style="color: var(--primary-navy); margin-bottom: 1rem;">No Hired Lawyers Yet</h3>
+            <p style="color: var(--text-gray); max-width: 400px; margin: 0 auto 2rem;">
+                When you hire a lawyer for one of your cases, they will appear here. Start by connecting with lawyers from your dashboard.
+            </p>
+            <a href="{% url 'client_dashboard' %}" class="btn-primary">View My Cases</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

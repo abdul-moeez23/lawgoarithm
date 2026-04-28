@@ -1,0 +1,557 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lawyer Sign Up - Lawgorithm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2b4a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .signup-container {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 3rem 2.5rem;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #c9a961, #1a2b4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #c9a961, #d4b76e);
+            color: #1a2b4a;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.75rem;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            color: #4a5568;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        label .required {
+            color: #e53e3e;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid #e2dfd9;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            color: #1a1a1a;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #c9a961;
+            box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background: #1a2b4a;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary:hover {
+            background: #243a5e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26, 43, 74, 0.3);
+        }
+
+        .terms {
+            font-size: 0.85rem;
+            color: #718096;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .terms a {
+            color: #c9a961;
+            text-decoration: none;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 2rem 0;
+            color: #a0aec0;
+            font-size: 0.875rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2dfd9;
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .signin-link {
+            text-align: center;
+            color: #4a5568;
+            font-size: 0.95rem;
+        }
+
+        .signin-link a {
+            color: #c9a961;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .signin-link a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-home a {
+            color: #718096;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .back-home a:hover {
+            color: #c9a961;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .info-box {
+            background: #f7fafc;
+            border: 1px solid #e2dfd9;
+            border-left: 4px solid #c9a961;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box h3 {
+            font-size: 0.95rem;
+            color: #1a2b4a;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .info-box ul {
+            margin-left: 1.25rem;
+            color: #4a5568;
+            font-size: 0.875rem;
+        }
+
+        .info-box li {
+            margin-bottom: 0.25rem;
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                padding: 2rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .logo-text {
+                font-size: 1.75rem;
+            }
+        }
+
+        /* Social Login CSS */
+        .social-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-social {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .btn-google {
+            background-color: #fff;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-google:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="signup-container">
+        <div class="logo">
+            <div class="logo-text">Lawgorithm</div>
+            <div class="badge">⚖️ Lawyer Registration</div>
+        </div>
+
+        <h1>Join as a Lawyer</h1>
+        <p class="subtitle">Create your professional account to connect with clients</p>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="info-box">
+            <h3>What you'll get:</h3>
+            <ul>
+                <li>AI-powered client matching</li>
+                <li>Professional profile showcase</li>
+                <li>Direct client communication</li>
+                <li>Case management tools</li>
+            </ul>
+        </div>
+
+        <form method="POST" action="{% url 'lawyer_signup' %}">
+            {% csrf_token %}
+
+            <div class="form-group" style="display: flex; gap: 1rem;">
+                <div style="flex: 1;">
+                    <label for="first_name">First Name <span class="required">*</span></label>
+                    <input type="text" id="first_name" name="first_name" required placeholder="John">
+                </div>
+                <div style="flex: 1;">
+                    <label for="last_name">Last Name <span class="required">*</span></label>
+                    <input type="text" id="last_name" name="last_name" required placeholder="Doe">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address <span class="required">*</span></label>
+                <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number <span
+                        style="color: #a0aec0; font-weight: normal; font-size: 0.8rem;">(Optional)</span></label>
+                <input type="tel" id="phone" name="phone" placeholder="+92 300 1234567">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password <span class="required">*</span></label>
+                <input type="password" id="password" name="password" required placeholder="Create a strong password">
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password <span class="required">*</span></label>
+                <input type="password" id="confirm_password" name="confirm_password" required
+                    placeholder="Re-enter your password">
+                <div id="password-strength"></div>
+            </div>
+
+            <button type="submit" class="btn-primary">Create Lawyer Account</button>
+
+            <p class="terms">
+                By signing up, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+            </p>
+        </form>
+
+        <div class="divider">
+            <span>Or sign up with</span>
+        </div>
+
+        <div class="social-buttons">
+            <a href="{% provider_login_url 'google' next='/lawyer/profile-complete/' %}" class="btn-social btn-google">
+                <i class="fab fa-google"></i>
+                <span>Continue with Google</span>
+            </a>
+        </div>
+
+        <div class="signin-link">
+            Already have an account? <a href="{% url 'lawyer_login' %}">Sign in</a>
+        </div>
+
+        <div class="back-home">
+            <a href="{% url 'index' %}">← Back to Home</a>
+        </div>
+    </div>
+
+
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirm_password');
+        const form = document.querySelector('form');
+        const submitBtn = document.querySelector('.btn-primary');
+
+        // Creating password feedback element
+        const passwordFeedback = document.createElement('ul');
+        passwordFeedback.id = 'password-feedback';
+        passwordFeedback.style.fontSize = '0.85rem';
+        passwordFeedback.style.paddingLeft = '0.5rem';
+        passwordFeedback.style.marginTop = '0.5rem';
+        passwordFeedback.style.color = '#718096';
+        passwordFeedback.style.listStyle = 'none';
+
+        passwordFeedback.innerHTML = `
+            <li id="len" style="transition: all 0.2s">At least 8 characters</li>
+            <li id="upper" style="transition: all 0.2s">At least 1 uppercase letter</li>
+            <li id="special" style="transition: all 0.2s">At least 1 special symbol</li>
+            <li id="match" style="transition: all 0.2s">Passwords must match</li>
+        `;
+
+        // Remove the static strength div if it existed and insert feedback instead
+        const strengthDiv = document.getElementById('password-strength');
+        if (strengthDiv) {
+            strengthDiv.replaceWith(passwordFeedback);
+        } else {
+            confirmInput.closest('.form-group').after(passwordFeedback);
+        }
+
+        function validate() {
+            let isValid = true;
+            const pVal = passwordInput.value;
+            const cpVal = confirmInput.value;
+
+            const successColor = '#22c55e';
+            const errorColor = '#ef4444';
+            const defaultColor = '#718096';
+
+            // Length check
+            const lenLi = document.getElementById('len');
+            if (pVal.length >= 8) {
+                lenLi.style.color = successColor;
+                lenLi.innerHTML = '<i class="fas fa-check"></i> At least 8 characters';
+            } else {
+                lenLi.style.color = errorColor;
+                lenLi.innerHTML = '<i class="fas fa-times"></i> At least 8 characters';
+                isValid = false;
+            }
+
+            // Uppercase check
+            const upperLi = document.getElementById('upper');
+            if (/[A-Z]/.test(pVal)) {
+                upperLi.style.color = successColor;
+                upperLi.innerHTML = '<i class="fas fa-check"></i> At least 1 uppercase letter';
+            } else {
+                upperLi.style.color = errorColor;
+                upperLi.innerHTML = '<i class="fas fa-times"></i> At least 1 uppercase letter';
+                isValid = false;
+            }
+
+            // Special character check
+            const specialLi = document.getElementById('special');
+            if (/[\W_]/.test(pVal)) {
+                specialLi.style.color = successColor;
+                specialLi.innerHTML = '<i class="fas fa-check"></i> At least 1 special symbol';
+            } else {
+                specialLi.style.color = errorColor;
+                specialLi.innerHTML = '<i class="fas fa-times"></i> At least 1 special symbol';
+                isValid = false;
+            }
+
+            // Match check
+            const matchLi = document.getElementById('match');
+            if (pVal === cpVal && pVal !== '') {
+                matchLi.style.color = successColor;
+                matchLi.innerHTML = '<i class="fas fa-check"></i> Passwords must match';
+            } else if (cpVal !== '') {
+                matchLi.style.color = errorColor;
+                matchLi.innerHTML = '<i class="fas fa-times"></i> Passwords must match';
+                isValid = false;
+            } else {
+                matchLi.style.color = defaultColor;
+                matchLi.innerHTML = 'Passwords must match';
+                isValid = false;
+            }
+
+            submitBtn.disabled = !isValid;
+            submitBtn.style.opacity = isValid ? '1' : '0.5';
+            submitBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+
+            return isValid;
+        }
+
+        passwordInput.addEventListener('input', validate);
+        confirmInput.addEventListener('input', validate);
+
+        form.addEventListener('submit', function (e) {
+            if (!validate()) {
+                e.preventDefault();
+            }
+        });
+
+        // Initial validate call
+        validate();
+
+        const phoneInput = document.getElementById("phone");
+
+        phoneInput.addEventListener("input", function (e) {
+            // Allow empty
+            if (this.value === "") {
+                return;
+            }
+
+            // If user starts typing standard number, assume it's Pakistan
+            if (!this.value.startsWith("+92")) {
+                let cleaned = this.value.replace(/[^0-9+]/g, "");
+                // If they typed something but it lacks +92, prepend it
+                if (cleaned && !cleaned.startsWith("+")) {
+                    this.value = "+92" + cleaned;
+                } else {
+                    this.value = cleaned;
+                }
+            } else {
+                // Remove all characters except digits after +92
+                this.value = "+92" + this.value.substring(3).replace(/[^0-9]/g, "");
+            }
+
+            // Limit to Pakistan number length: +92 + 10 digits = total 13 chars
+            if (this.value.length > 13) {
+                this.value = this.value.slice(0, 13);
+            }
+        });
+
+        ['first_name', 'last_name'].forEach(function(id) {
+            document.getElementById(id).addEventListener('input', function (e) {
+                // Remove all non-letter characters
+                this.value = this.value.replace(/[^a-zA-Z\s]/g, '');
+            });
+        });
+
+        // Auto-hide messages after 5 seconds
+        const messages = document.querySelectorAll('.error-message, .success-message');
+        messages.forEach(msg => {
+            setTimeout(() => {
+                msg.style.transition = 'opacity 1s ease-out, transform 0.5s ease-in';
+                msg.style.opacity = '0';
+                msg.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    msg.remove();
+                }, 1000);
+            }, 5000);
+        });
+    </script>
+
+
+</body>
+
+</html>

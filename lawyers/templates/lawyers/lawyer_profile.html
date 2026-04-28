@@ -1,0 +1,102 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">My Profile</h2>
+
+<div class="row">
+    <!-- Left Column: Profile Card -->
+    <div class="col-md-4">
+        <div class="card-box text-center">
+            {% if lawyer.profile_picture %}
+                <img src="{{ lawyer.profile_picture.url }}" alt="Profile Picture" class="rounded-circle img-thumbnail mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+            {% else %}
+                <div class="rounded-circle bg-light d-flex justify-content-center align-items-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                    <i class="fas fa-user-tie fa-4x text-muted"></i>
+                </div>
+            {% endif %}
+            
+            <h4 class="mb-1">{{ lawyer.user.first_name }} {{ lawyer.user.last_name }}</h4>
+            <p class="text-muted mb-2">{{ lawyer.user.email }}</p>
+            
+            {% if lawyer.verification_status == 'approved' %}
+                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Verified Lawyer</span>
+            {% elif lawyer.verification_status == 'pending' %}
+                <span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half me-1"></i>Verification Pending</span>
+            {% elif lawyer.verification_status == 'rejected' %}
+                <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Verification Rejected</span>
+            {% endif %}
+
+            <div class="mt-4">
+                 <a href="{% url 'edit_lawyer_profile' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                    <i class="fas fa-edit me-2"></i>Edit Profile
+                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Details -->
+    <div class="col-md-8">
+        <div class="card-box">
+            <h4 class="header-title mb-4">Professional Details</h4>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="text-muted small text-uppercase">Enrollment Number</label>
+                    <p class="fw-bold">{{ lawyer.bar_enrollment }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small text-uppercase">Phone</label>
+                    <p class="fw-bold">{{ lawyer.user.phone }}</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="text-muted small text-uppercase">Experience</label>
+                    <p class="fw-bold">{{ lawyer.experience_years }} Years</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small text-uppercase">City</label>
+                    <p class="fw-bold">{{ lawyer.city.name }}</p>
+                </div>
+            </div>
+
+             <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="text-muted small text-uppercase">Legal Category</label>
+                    <p class="fw-bold">
+                        {% for area in lawyer.practice_areas.all %}
+                            <span class="badge bg-secondary font-weight-normal">{{ area.name }}</span>
+                        {% empty %}
+                            <span class="text-muted">No areas listed</span>
+                        {% endfor %}
+                    </p>
+                </div> <!-- category in model seems to be practice_areas or derived, fixing mapping -->
+                <div class="col-md-6">
+                    <label class="text-muted small text-uppercase">Consultation Fee</label>
+                    <p class="fw-bold text-success">{{ lawyer.fee_band.name }} ({{ lawyer.fee_band.min_fee }} - {{ lawyer.fee_band.max_fee }})</p>
+                </div>
+            </div>
+
+            <hr>
+            
+            <div class="row">
+                 <div class="col-12">
+                     <label class="text-muted small text-uppercase">Courts</label>
+                     <p>
+                        {% for court in lawyer.courts.all %}
+                            <span class="badge bg-info text-dark me-1">{{ court.name }}</span>
+                        {% empty %}
+                            <span class="text-muted">No courts listed</span>
+                        {% endfor %}
+                     </p>
+                 </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

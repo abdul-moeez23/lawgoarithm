@@ -1,0 +1,144 @@
+{% extends 'clients/dashboard_base.html' %}
+{% load static %}
+
+{% comment %} {% load widget_tweaks %} {% endcomment %}
+
+{% block title %}Post New Case - Lawgorithm{% endblock %}
+
+{% block header_title %}Post New Case{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    .form-label {
+        font-weight: 500;
+        color: var(--primary-navy);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .form-control, .form-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background-color: #fff;
+    }
+
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--accent-gold);
+        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--secondary-navy);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .submit-btn {
+        background-color: var(--accent-gold);
+        color: var(--primary-navy);
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.1s, background-color 0.2s;
+        width: 100%;
+        font-size: 1rem;
+    }
+
+    .submit-btn:hover {
+        background-color: #bfa05d;
+    }
+
+    .submit-btn:active {
+        transform: scale(0.98);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+    <form method="POST" action="">
+        {% csrf_token %}
+        
+        <div class="form-section-title">Case Details</div>
+
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}" class="form-label">Case Title</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                {{ form.category }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.subcategory.id_for_label }}" class="form-label">Sub-category</label>
+                {{ form.subcategory }}
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.court_level.id_for_label }}" class="form-label">Court Level</label>
+                {{ form.court_level }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.city.id_for_label }}" class="form-label">City</label>
+                {{ form.city }}
+            </div>
+        </div>
+
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.urgency.id_for_label }}" class="form-label">Urgency</label>
+            {{ form.urgency }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}" class="form-label">Case Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+            {% endif %}
+            <small class="text-muted">Please provide as much detail as possible to help lawyers understand your case.</small>
+        </div>
+
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="submit-btn">Post Case</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'clients/dashboard_base.html' %}
+
+{% block title %}Profile - Lawgorithm{% endblock %}
+{% block header_title %}Profile & Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px;">
+    <form method="POST">
+        {% csrf_token %}
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">First Name</label>
+            <input type="text" name="first_name" value="{{ user.first_name }}" 
+                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;">
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Last Name</label>
+            <input type="text" name="last_name" value="{{ user.last_name }}" 
+                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;">
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email Address</label>
+            <input type="email" value="{{ user.email }}" disabled
+                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: #f1f5f9;">
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Phone Number</label>
+            <input type="text" name="phone" value="{{ user.phone }}" 
+                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;">
+        </div>
+
+        <button type="submit" class="btn-primary">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

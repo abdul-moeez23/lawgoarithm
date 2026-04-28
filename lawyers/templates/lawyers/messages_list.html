@@ -1,0 +1,81 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}Messages - Lawyer Panel{% endblock %}
+{% block page_title %}Messages{% endblock %}
+
+{% block content %}
+<div class="welcome-header mb-5" style="background: linear-gradient(135deg, #364d59 0%, #2c3e48 100%); padding: 2rem; border-radius: 15px; color: white;">
+    <h1 class="display-5 mb-2" style="color: #fee2b3; font-weight: 700;">Messages</h1>
+    <p class="text-white-50 mb-0">Communicate securely with your clients and manage case discussions</p>
+</div>
+
+<div class="card-box p-0 overflow-hidden">
+    <div class="px-4 py-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-dark"><i class="fas fa-comments me-2"></i>Active Conversations</h5>
+        {% if interactions %}
+        <span class="badge bg-primary">{{ interactions|length }} Chats</span>
+        {% endif %}
+    </div>
+    
+    {% if interactions %}
+    <div class="list-group list-group-flush">
+        {% for interaction in interactions %}
+        <a href="{% url 'lawyer_case_detail' interaction.case.id %}?tab=messages" 
+           class="list-group-item list-group-item-action p-4 border-bottom message-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-init bg-warning rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 55px; height: 55px; font-size: 1.3rem; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                        {{ interaction.case.client.first_name|first|upper }}{{ interaction.case.client.last_name|first|upper }}
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-bold text-dark" style="font-size: 1.1rem;">
+                            {{ interaction.case.client.get_full_name|default:interaction.case.client.email }}
+                            {% if interaction.unread_count > 0 %}
+                            <span class="badge rounded-pill bg-success ms-2" style="font-size: 0.8rem;" id="unread-{{ interaction.case.id }}">{{ interaction.unread_count }}</span>
+                            {% endif %}
+                        </h6>
+                        <p class="mb-0 text-muted">
+                            <i class="fas fa-briefcase me-1 small"></i> {{ interaction.case.title|truncatechars:50 }}
+                        </p>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="badge rounded-pill mb-2 px-3 py-2 bg-{{ interaction.case.status|default:'secondary' }}" style="font-size: 0.75rem;">
+                        {{ interaction.case.get_status_display }}
+                    </span>
+                    <p class="mb-0 text-muted x-small"><i class="far fa-clock me-1"></i>{{ interaction.case.updated_at|timesince }} ago</p>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 px-3">
+        <div class="mb-4">
+            <i class="far fa-comments text-muted" style="font-size: 4rem; opacity: 0.2;"></i>
+        </div>
+        <h5 class="fw-bold">No active conversations</h5>
+        <p class="text-muted mx-auto" style="max-width: 400px;">Communication starts once a case request is accepted. Keep an eye on your dashboard for new client invitations.</p>
+        <a href="{% url 'lawyer_dashboard' %}" class="btn btn-primary-custom mt-3 px-4">
+            <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .message-item {
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+    .message-item:hover {
+        background-color: #f8fbff !important;
+        border-left-color: #364d59;
+        transform: translateX(5px);
+    }
+    .x-small { font-size: 0.75rem; }
+    .avatar-init {
+        background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%) !important;
+    }
+</style>
+{% endblock %}

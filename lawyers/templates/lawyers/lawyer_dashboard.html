@@ -1,0 +1,574 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}Lawyer Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome Header -->
+<div class="welcome-header mb-5">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="display-5 mb-2">Welcome back, {{ lawyer.full_name }}</h1>
+      <p class="text-muted mb-0">
+        <i class="far fa-calendar-alt me-2"></i>{% now "l, F jS, Y" %}
+        <span class="ms-3"><i class="far fa-clock me-2"></i>{% now "g:i A" %}</span>
+      </p>
+    </div>
+    <div class="profile-badge">
+      {% if lawyer.lawyer_profile.profile_picture %}
+      <div class="avatar-circle header-profile-img">
+        <img src="{{ lawyer.lawyer_profile.profile_picture.url }}" alt="Profile" class="img-fluid">
+      </div>
+      {% else %}
+      <div class="avatar-circle">
+        <i class="fas fa-user-tie"></i>
+      </div>
+      {% endif %}
+    </div> 
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+  <!-- Total Cases Card -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card stat-card-blue">
+      <div class="stat-icon">
+        <i class="fas fa-briefcase"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ total_cases|default:0 }}</h3>
+        <p class="stat-label">Total Cases</p>
+        <div class="stat-footer">
+          <span class="badge-pill">All Time</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Clients Card -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card stat-card-green">
+      <div class="stat-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ active_clients|default:0 }}</h3>
+        <p class="stat-label">Active Clients</p>
+        <div class="stat-footer">
+          <span class="badge-pill">Current</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointments Card -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card stat-card-purple">
+      <div class="stat-icon">
+        <i class="fas fa-calendar-check"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ appointments_count|default:0 }}</h3>
+        <p class="stat-label">Appointments</p>
+        <div class="stat-footer">
+          <span class="badge-pill">Upcoming</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documents Card -->
+  <div class="col-xl-3 col-md-6">
+    <div class="stat-card stat-card-orange">
+      <div class="stat-icon">
+        <i class="fas fa-file-alt"></i>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-number">{{ documents_count|default:0 }}</h3>
+        <p class="stat-label">Documents</p>
+        <div class="stat-footer">
+          <span class="badge-pill">Uploaded</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row g-4">
+  <!-- Left Column -->
+  <div class="col-lg-8">
+    <!-- Quick Actions -->
+    <div class="card-box mb-4">
+      <h5 class="mb-4"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <a href="{% url 'edit_lawyer_profile' %}" class="action-btn action-btn-primary">
+            <i class="fas fa-user-edit"></i>
+            <span>Update Profile</span>
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a href="#" class="action-btn action-btn-success">
+            <i class="fas fa-calendar-plus"></i>
+            <span>New Appointment</span>
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a href="#" class="action-btn action-btn-info">
+            <i class="fas fa-file-upload"></i>
+            <span>Upload Document</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connection Requests -->
+    <div class="card-box mb-4" id="connection-requests-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Connection Requests</h5>
+        {% if pending_requests %}
+        <span class="badge bg-primary">{{ pending_requests|length }} New</span>
+        {% endif %}
+      </div>
+      
+      {% if pending_requests %}
+      <div class="connection-requests-list">
+        {% for request in pending_requests %}
+        <div class="connection-request-item mb-3 p-3 border rounded">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h6 class="mb-1 fw-bold">{{ request.case.title }}</h6>
+              <p class="text-muted small mb-1">
+                <i class="fas fa-user me-1"></i>{{ request.case.client.get_full_name|default:request.case.client.email }}
+              </p>
+              <p class="text-muted small mb-0">
+                <i class="far fa-clock me-1"></i>{{ request.created_at|timesince }} ago
+              </p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              {% if request.status == 'accepted' %}
+              <span class="badge bg-success-subtle text-success border border-success">Responded</span>
+              {% endif %}
+              {% if request.case.category %}
+              <span class="badge bg-secondary">{{ request.case.category.name }}</span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <p class="text-muted small mb-3">{{ request.case.description|truncatewords:20 }}</p>
+          
+          <div class="d-flex gap-2">
+            {% if request.status == 'invited' %}
+              <button type="button" class="btn btn-success btn-sm flex-grow-1" onclick="handleInvitationAction('{{ request.id }}', 'accept')">
+                <i class="fas fa-check me-1"></i>Accept
+              </button>
+            {% elif request.status == 'accepted' and not request.quoted_fee %}
+              <button type="button" class="btn btn-primary btn-sm flex-grow-1" onclick="openAcceptModal('{{ request.id }}', '{{ request.case.title|escapejs }}')">
+                <i class="fas fa-file-invoice-dollar me-1"></i>Confirm Acceptance & Propose Fee
+              </button>
+            {% elif request.status == 'accepted' and request.quoted_fee %}
+              <div class="btn btn-outline-success btn-sm flex-grow-1 disabled">
+                <i class="fas fa-check-double me-1"></i>Fee Proposed
+              </div>
+            {% endif %}
+            
+            <a href="{% url 'lawyer_case_detail' request.case.id %}?tab=messages" class="btn btn-outline-primary btn-sm flex-grow-1">
+              <i class="fas fa-comments me-1"></i>Chat
+            </a>
+            
+            {% if request.status == 'invited' %}
+            <a href="{% url 'handle_connection_request' request.id 'reject' %}" class="btn btn-outline-danger btn-sm flex-grow-1" onclick="handleRequestAction(event, this)">
+              <i class="fas fa-times me-1"></i>Reject
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p class="text-muted mb-0">No pending connection requests</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card-box">
+      <h5 class="mb-4"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+      <div class="activity-timeline">
+        <div class="activity-item">
+          <div class="activity-icon activity-icon-success">
+            <i class="fas fa-check"></i>
+          </div>
+          <div class="activity-content">
+            <h6 class="mb-1">Account Approved</h6>
+            <p class="text-muted mb-0">Your lawyer account has been successfully verified and approved</p>
+            <small class="text-muted"><i class="far fa-clock me-1"></i>Today</small>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-icon activity-icon-info">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <div class="activity-content">
+            <h6 class="mb-1">Profile Created</h6>
+            <p class="text-muted mb-0">Welcome to the AI Lawyer Platform</p>
+            <small class="text-muted"><i class="far fa-clock me-1"></i>Recently</small>
+          </div>
+        </div>
+
+        <div class="activity-item activity-item-empty">
+          <div class="activity-icon activity-icon-muted">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="activity-content">
+            <p class="text-muted mb-0">No additional activity to display</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div class="col-lg-4">
+    <!-- Profile Summary -->
+    <div class="card-box mb-4">
+      <h5 class="mb-4"><i class="fas fa-id-card me-2"></i>Profile Summary</h5>
+      <div class="profile-info">
+        <div class="info-item">
+          <div class="info-icon">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="info-content">
+            <small class="text-muted">Full Name</small>
+            <p class="mb-0 fw-bold">{{ lawyer.first_name }}</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon">
+            <i class="fas fa-envelope"></i>
+          </div>
+          <div class="info-content">
+            <small class="text-muted">Email Address</small>
+            <p class="mb-0 fw-bold">{{ lawyer.email }}</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon">
+            <i class="fas fa-phone"></i>
+          </div>
+          <div class="info-content">
+            <small class="text-muted">Phone Number</small>
+            <p class="mb-0 fw-bold">{{ lawyer.phone }}</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <div class="info-content">
+            <small class="text-muted">Account Status</small>
+            <p class="mb-0">
+              <span class="badge bg-success">
+                <i class="fas fa-check-circle me-1"></i>Verified
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="card-box">
+      <h5 class="mb-4"><i class="fas fa-calendar-alt me-2"></i>Upcoming Appointments</h5>
+      <div class="appointments-list">
+        <div class="empty-state">
+          <i class="fas fa-calendar-times"></i>
+          <p class="text-muted mb-0">No upcoming appointments</p>
+          <a href="#" class="btn btn-sm btn-primary-custom mt-3">
+            <i class="fas fa-plus me-1"></i>Schedule New
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .welcome-header {
+    background: linear-gradient(135deg, #364d59 0%, #2c3e48 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(54, 77, 89, 0.2);
+  }
+  .welcome-header h1 { color: #fee2b3; font-weight: 700; margin-bottom: 0.5rem; }
+  .welcome-header .text-muted { color: rgba(255,255,255,0.8) !important; }
+  .profile-badge .avatar-circle {
+    width: 70px; height: 70px; border-radius: 50%;
+    background: linear-gradient(135deg, #fee2b3 0%, #ffd89b 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; color: #364d59;
+    box-shadow: 0 5px 15px rgba(254,226,179,0.3);
+  }
+  .header-profile-img { padding: 0 !important; overflow: hidden; border: 3px solid #fee2b3; background: white; }
+  .header-profile-img img { width: 100%; height: 100%; object-fit: cover; }
+
+  .stat-card {
+    background: white; border-radius: 15px; padding: 1.5rem;
+    display: flex; align-items: center; gap: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    transition: all 0.3s ease; position: relative; overflow: hidden; height: 100%;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+    background: linear-gradient(90deg, var(--card-color-1), var(--card-color-2));
+  }
+  .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+  .stat-card-blue  { --card-color-1: #4e73df; --card-color-2: #224abe; }
+  .stat-card-green { --card-color-1: #1cc88a; --card-color-2: #13855c; }
+  .stat-card-purple{ --card-color-1: #6f42c1; --card-color-2: #5a32a3; }
+  .stat-card-orange{ --card-color-1: #f6c23e; --card-color-2: #dda20a; }
+  .stat-icon { width: 70px; height: 70px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+  .stat-card-blue  .stat-icon { background: linear-gradient(135deg,#4e73df,#224abe); color: white; }
+  .stat-card-green .stat-icon { background: linear-gradient(135deg,#1cc88a,#13855c); color: white; }
+  .stat-card-purple.stat-icon { background: linear-gradient(135deg,#6f42c1,#5a32a3); color: white; }
+  .stat-card-orange .stat-icon { background: linear-gradient(135deg,#f6c23e,#dda20a); color: white; }
+  .stat-content { flex: 1; }
+  .stat-number { font-size: 2.5rem; font-weight: 700; color: #364d59; margin-bottom: 0.25rem; }
+  .stat-label { color: #6c757d; font-size: 0.95rem; font-weight: 500; margin-bottom: 0.5rem; }
+  .stat-footer .badge-pill { background: #f4f6f9; color: #6c757d; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; }
+
+  .action-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; border-radius: 12px; text-decoration: none; transition: all 0.3s ease; color: white; text-align: center; gap: 0.75rem; }
+  .action-btn i { font-size: 2rem; }
+  .action-btn span { font-weight: 500; font-size: 0.9rem; }
+  .action-btn-primary { background: linear-gradient(135deg,#364d59,#2c3e48); }
+  .action-btn-success { background: linear-gradient(135deg,#1cc88a,#13855c); }
+  .action-btn-info    { background: linear-gradient(135deg,#36b9cc,#258391); }
+  .action-btn:hover   { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); color: white; }
+
+  .activity-timeline { position: relative; }
+  .activity-item { display: flex; gap: 1rem; margin-bottom: 1.5rem; position: relative; }
+  .activity-item:not(:last-child)::after { content: ''; position: absolute; left: 19px; top: 45px; width: 2px; height: calc(100% - 20px); background: #e9ecef; }
+  .activity-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: white; font-size: 0.9rem; z-index: 1; }
+  .activity-icon-success { background: linear-gradient(135deg,#1cc88a,#13855c); }
+  .activity-icon-info    { background: linear-gradient(135deg,#36b9cc,#258391); }
+  .activity-icon-muted   { background: #e9ecef; color: #6c757d; }
+  .activity-content h6  { color: #364d59; font-weight: 600; font-size: 0.95rem; }
+  .activity-content p   { font-size: 0.875rem; margin-bottom: 0.25rem; }
+  .activity-content small { font-size: 0.8rem; }
+
+  .profile-info { display: flex; flex-direction: column; gap: 1.25rem; }
+  .info-item    { display: flex; gap: 1rem; align-items: flex-start; }
+  .info-icon    { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg,#364d59,#2c3e48); color: #fee2b3; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .info-content { flex: 1; }
+  .info-content small { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.25rem; }
+  .info-content p { font-size: 0.9rem; color: #364d59; word-break: break-word; }
+
+  .empty-state { text-align: center; padding: 2rem 1rem; }
+  .empty-state i { font-size: 3rem; color: #dee2e6; margin-bottom: 1rem; }
+  .empty-state p { font-size: 0.9rem; }
+
+  .connection-requests-list { max-height: 600px; overflow-y: auto; }
+  .connection-request-item { background: #f8f9fa; border: 1px solid #dee2e6 !important; transition: all 0.3s ease; }
+  .connection-request-item:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transform: translateY(-2px); }
+  .connection-request-item h6 { color: #364d59; font-size: 1rem; }
+
+  .slide-in { animation: slideDown 0.5s ease-out; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 768px) {
+    .stat-card { flex-direction: column; text-align: center; }
+    .stat-icon { width: 60px; height: 60px; font-size: 1.5rem; }
+    .stat-number { font-size: 2rem; }
+    .welcome-header { text-align: center; }
+    .profile-badge { margin-top: 1rem; }
+  }
+</style>
+
+<!-- Accept Request Modal -->
+<div class="modal fade" id="acceptRequestModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Accept Request & Quote Fee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>You are accepting the case: <strong id="modalCaseTitle"></strong></p>
+        <form id="acceptRequestForm" method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="feeInput" class="form-label">Proposed Fee (PKR)</label>
+            <div class="input-group">
+              <span class="input-group-text">Rs.</span>
+              <input type="number" class="form-control" id="feeInput" name="quoted_fee" required min="0" placeholder="Enter amount">
+            </div>
+            <div class="form-text">Enter your fee for this specific case context.</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" onclick="submitAcceptForm()">Confirm Acceptance & Propose Fee</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.handleDashboardMessage = function(data) {
+      if (data.type === 'new_connection_request') {
+          handleNewConnectionRequest(data.data);
+      }
+  };
+
+  function handleNewConnectionRequest(data) {
+      const containerBox = document.getElementById('connection-requests-container');
+      const container = containerBox.querySelector('.connection-requests-list');
+      const emptyState = containerBox.querySelector('.empty-state');
+      
+      let badgeSpan = containerBox.querySelector('.badge.bg-primary');
+      if (badgeSpan) {
+           const currentCount = parseInt(badgeSpan.textContent) || 0;
+           badgeSpan.textContent = (currentCount + 1) + ' New';
+      } else {
+           badgeSpan = document.createElement('span');
+           badgeSpan.className = 'badge bg-primary';
+           badgeSpan.textContent = '1 New';
+           containerBox.firstElementChild.appendChild(badgeSpan);
+      }
+
+      if (emptyState) {
+          emptyState.remove();
+          if (!container) {
+              const newContainer = document.createElement('div');
+              newContainer.className = 'connection-requests-list';
+              containerBox.appendChild(newContainer);
+              handleNewConnectionRequest(data); 
+              return;
+          }
+      }
+      if (!container) return; 
+
+      const newItem = document.createElement('div');
+      newItem.className = 'connection-request-item mb-3 p-3 border rounded slide-in';
+      newItem.id = `request-${data.id}`;
+      newItem.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h6 class="mb-1 fw-bold">${data.case_title}</h6>
+              <p class="text-muted small mb-1"><i class="fas fa-user me-1"></i>${data.client_name}</p>
+              <p class="text-muted small mb-0"><i class="far fa-clock me-1"></i>${data.time_since} ago</p>
+            </div>
+            ${data.case_category ? `<span class="badge bg-secondary">${data.case_category}</span>` : ''}
+        </div>
+        <p class="text-muted small mb-3">${data.case_description.split(' ').slice(0, 20).join(' ')}...</p>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success btn-sm flex-grow-1" onclick="handleInvitationAction('${data.id}', 'accept')">
+            <i class="fas fa-check me-1"></i>Accept
+          </button>
+          <a href="/lawyer/case/${data.case_id}/?tab=messages" class="btn btn-outline-primary btn-sm flex-grow-1">
+            <i class="fas fa-comments me-1"></i>Chat
+          </a>
+          <a href="/lawyer/connection-request/${data.id}/reject/" class="btn btn-outline-danger btn-sm flex-grow-1" onclick="handleRequestAction(event, this)">
+            <i class="fas fa-times me-1"></i>Reject
+          </a>
+        </div>
+      `;
+      container.insertBefore(newItem, container.firstChild);
+  }
+  
+  function handleInvitationAction(requestId, action) {
+      fetch(`/lawyer/connection-request/${requestId}/${action}/`, {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              window.location.reload();
+          } else {
+              alert(data.message || 'Error occurred');
+          }
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
+  function handleRequestAction(event, element) {
+      event.preventDefault();
+      const url = element.href;
+      const card = element.closest('.connection-request-item');
+      fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(() => {
+          card.style.opacity = '0';
+          setTimeout(() => { card.remove(); updateCounts(); }, 300);
+      })
+      .catch(error => console.error('Error:', error));
+  }
+  
+  let currentRequestId = null;
+  let acceptModal = null;
+
+  function openAcceptModal(requestId, caseTitle) {
+      currentRequestId = requestId;
+      document.getElementById('modalCaseTitle').textContent = caseTitle;
+      const modalEl = document.getElementById('acceptRequestModal');
+      acceptModal = new bootstrap.Modal(modalEl);
+      acceptModal.show();
+  }
+
+  function submitAcceptForm() {
+      const feeInput = document.getElementById('feeInput');
+      if (!feeInput.value) { alert("Please enter a fee."); return; }
+      const form = document.getElementById('acceptRequestForm');
+      const formData = new FormData(form);
+      fetch(`/lawyer/connection-request/${currentRequestId}/propose_fee/`, {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              acceptModal.hide();
+              const card = document.getElementById(`request-${currentRequestId}`) || 
+                           [...document.querySelectorAll('.connection-request-item')].find(el => el.innerHTML.includes(`openAcceptModal('${currentRequestId}'`));
+              if (card) {
+                  card.style.opacity = '0';
+                  setTimeout(() => { card.remove(); updateCounts(); }, 300);
+              }
+              form.reset();
+              currentRequestId = null;
+          } else {
+              alert(data.message || 'Error occurred');
+          }
+      })
+      .catch(error => { console.error('Error:', error); alert('Failed to submit request'); });
+  }
+
+  function updateCounts() {
+      const containerBox = document.getElementById('connection-requests-container');
+      const container = containerBox.querySelector('.connection-requests-list');
+      if (container && container.children.length === 0) {
+           container.remove();
+           const emptyState = document.createElement('div');
+           emptyState.className = 'empty-state';
+           emptyState.innerHTML = `<i class="fas fa-inbox"></i><p class="text-muted mb-0">No pending connection requests</p>`;
+           containerBox.appendChild(emptyState);
+           const badge = containerBox.querySelector('.badge');
+           if (badge) badge.remove();
+      } else {
+          const badge = containerBox.querySelector('.badge');
+          if (badge && container) { badge.textContent = container.children.length + ' New'; }
+      }
+  }
+</script>
+{% endblock %}

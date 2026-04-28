@@ -1,0 +1,74 @@
+{% extends 'lawyers/base_lawyer.html' %}
+
+{% block title %}My Appointments{% endblock %}
+{% block page_title %}Appointments{% endblock %}
+
+{% block content %}
+<div class="welcome-header mb-5" style="background: linear-gradient(135deg, #364d59 0%, #2c3e48 100%); padding: 2rem; border-radius: 15px; color: white;">
+    <h1 class="display-5 mb-2" style="color: #fee2b3; font-weight: 700;">My Appointments</h1>
+    <p class="text-white-50 mb-0">View and manage your upcoming meetings with clients</p>
+</div>
+
+<div class="card-box">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Upcoming Sessions</h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Client</th>
+                    <th>Date & Time</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in appointments %}
+                <tr>
+                    <td><strong>{{ appointment.title }}</strong></td>
+                    <td>{{ appointment.attendee.get_full_name }}</td>
+                    <td>
+                        <div class="d-flex flex-column">
+                            <span><i class="far fa-calendar-alt me-1 text-primary"></i> {{ appointment.datetime|date:"d M Y" }}</span>
+                            <small class="text-muted"><i class="far fa-clock me-1"></i> {{ appointment.datetime|date:"h:i A" }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        {% if appointment.location %}
+                        <span class="badge bg-light text-dark"><i class="fas fa-map-marker-alt me-1 text-danger"></i> {{ appointment.location }}</span>
+                        {% else %}
+                        <span class="text-muted small">Not specified</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if appointment.status == 'scheduled' %}
+                        <span class="badge bg-info">Scheduled</span>
+                        {% elif appointment.status == 'completed' %}
+                        <span class="badge bg-success">Completed</span>
+                        {% else %}
+                        <span class="badge bg-danger">{{ appointment.status|title }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'lawyer_case_detail' appointment.case.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i> View Case
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fas fa-calendar-times mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mb-0">No appointments found.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

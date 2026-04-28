@@ -1,0 +1,149 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Manage Practice Areas{% endblock %}
+
+{% block page_title %}Manage Practice Areas{% endblock %}
+
+{% block content %}
+
+
+<div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem;">
+    <!-- Add Category Form -->
+    <div class="card-box" style="flex: 1; min-width: 300px;">
+        <h5 style="margin-bottom:1rem; color:var(--primary-navy);">
+            <i class="fas fa-folder-plus"></i> Add Category
+        </h5>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_category">
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Category Name</label>
+                <input type="text" name="category_name" class="form-control" placeholder="e.g., Civil Law" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-plus"></i> Add Category
+            </button>
+        </form>
+    </div>
+
+    <!-- Add Practice Area Form -->
+    <div class="card-box" style="flex: 1; min-width: 300px;">
+        <h5 style="margin-bottom:1rem; color:var(--primary-navy);">
+            <i class="fas fa-plus-circle"></i> Add Practice Area
+        </h5>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+
+            <div style="display: flex; gap: 1rem;">
+                <div style="flex: 1;">
+                    <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Category</label>
+                    <select name="category_id" class="form-control" required>
+                        <option value="">Select Category...</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Area Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g., Family Law" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-plus"></i> Add Practice Area
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Practice Areas List -->
+<div class="card-box">
+    <h5 style="margin-bottom:1.5rem; color:var(--primary-navy);">
+        <i class="fas fa-balance-scale"></i> All Practice Areas ({{ practice_areas.count }})
+    </h5>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Practice Area Name</th>
+                <th>Category</th>
+                <th style="width:200px; text-align:right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for area in practice_areas %}
+            <tr>
+                <!-- Edit Form Inputs linked via form attribute -->
+                <td>
+                    <input type="text" form="edit-form-{{ area.id }}" name="name" value="{{ area.name }}"
+                        class="form-control" required>
+                </td>
+                <td>
+                    <select form="edit-form-{{ area.id }}" name="category_id" class="form-control" required>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if cat.id == area.category.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </td>
+
+                <td style="text-align:right; white-space:nowrap;">
+                    <!-- The Edit Form (Hidden, but provides context for inputs) -->
+                    <form id="edit-form-{{ area.id }}" method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="area_id" value="{{ area.id }}">
+                        <button type="submit" class="btn btn-sm btn-success" title="Save Changes">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </form>
+
+                    <!-- Delete Form -->
+                    <form method="POST" style="display:inline;"
+                        onsubmit="return confirm('Delete this practice area?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="area_id" value="{{ area.id }}">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align:center; color:#6b7280; padding:2rem;">
+                    No practice areas defined yet
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    /* Minimal scoped styles for table inputs */
+    table input.form-control,
+    table select.form-control {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.95rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        background-color: #f9fafb;
+        width: 100%;
+    }
+
+    table input.form-control:focus,
+    table select.form-control:focus {
+        background-color: #fff;
+        border-color: var(--primary-navy);
+        box-shadow: 0 0 0 2px rgba(13, 27, 42, 0.1);
+    }
+</style>
+
+{% endblock %}

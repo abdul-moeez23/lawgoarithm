@@ -1,0 +1,278 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "Confirm Email" %} - Lawgorithm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-navy: #0f172a;
+            --accent-gold: #c9a961;
+            --accent-gold-hover: #b89a55;
+            --text-dark: #1e293b;
+            --text-gray: #64748b;
+            --white: #ffffff;
+            --border-color: #e2e8f0;
+            --surface: #f8fafc;
+            --success-bg: #f0fdf4;
+            --success-text: #166534;
+            --danger-bg: #fef2f2;
+            --danger-text: #b91c1c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background: var(--white);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        .auth-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .brand-section {
+            flex: 1;
+            display: none;
+            background: linear-gradient(135deg, var(--primary-navy) 0%, #1e293b 100%);
+            color: #e2e8f0;
+            padding: 4rem;
+            position: relative;
+            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        @media (min-width: 1024px) {
+            .brand-section {
+                display: flex;
+                width: 50%;
+            }
+        }
+
+        .brand-logo {
+            font-family: "Poppins", sans-serif;
+            font-size: 3.2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-gold), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-tagline {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .brand-desc {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .circle-1, .circle-2 {
+            position: absolute;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .circle-1 {
+            top: -80px;
+            right: -80px;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(201,169,97,0.12) 0%, rgba(255,255,255,0) 70%);
+        }
+
+        .circle-2 {
+            bottom: -60px;
+            left: -60px;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, rgba(201,169,97,0.08) 0%, rgba(255,255,255,0) 70%);
+        }
+
+        .form-section {
+            flex: 1;
+            background: var(--surface);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 520px;
+            background: var(--white);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            padding: 2.5rem;
+        }
+
+        .icon-wrap {
+            width: 56px;
+            height: 56px;
+            border-radius: 999px;
+            background: rgba(201, 169, 97, 0.14);
+            color: var(--primary-navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .title {
+            font-family: "Poppins", sans-serif;
+            font-size: 1.85rem;
+            color: var(--primary-navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-gray);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .email {
+            color: var(--primary-navy);
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .notice {
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            font-size: 0.95rem;
+            border: 1px solid transparent;
+            line-height: 1.5;
+        }
+
+        .notice-success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border-color: #bbf7d0;
+        }
+
+        .notice-danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border-color: #fecaca;
+        }
+
+        .btn {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 0.95rem 1rem;
+            font-family: "Poppins", sans-serif;
+            font-weight: 600;
+            font-size: 0.96rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+        }
+
+        .btn-primary {
+            color: var(--white);
+            background: var(--primary-navy);
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: #243a5e;
+            transform: translateY(-1px);
+        }
+
+        .link-row {
+            margin-top: 1.25rem;
+            text-align: center;
+        }
+
+        .link {
+            color: var(--text-gray);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
+
+        .link:hover {
+            color: var(--primary-navy);
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="brand-section">
+            <div class="circle-1"></div>
+            <div class="circle-2"></div>
+            <div style="position: relative; z-index: 1; max-width: 460px;">
+                <div class="brand-logo">Lawgorithm</div>
+                <h2 class="brand-tagline">{% trans "Secure Account Verification" %}</h2>
+                <p class="brand-desc">{% trans "Confirm your email to activate your account and continue with your legal journey." %}</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="card">
+                <div class="icon-wrap">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                </div>
+                <h1 class="title">{% trans "Confirm Email Address" %}</h1>
+
+                {% if confirmation %}
+                    <p class="subtitle">
+                        {% blocktrans with confirmation.email_address.email as email %}
+                        Please confirm that <span class="email">{{ email }}</span> is the email address for this account.
+                        {% endblocktrans %}
+                    </p>
+
+                    <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fa-solid fa-check"></i>
+                            {% trans "Confirm Email" %}
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="notice notice-danger">
+                        {% url 'account_email' as email_url %}
+                        {% blocktrans %}
+                        This confirmation link is invalid or has expired. Please request a new confirmation email.
+                        {% endblocktrans %}
+                    </div>
+                    <a class="btn btn-primary" href="{{ email_url }}">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        {% trans "Request New Confirmation Email" %}
+                    </a>
+                {% endif %}
+
+                <div class="link-row">
+                    <a class="link" href="{% url 'signin' %}">
+                        <i class="fa-solid fa-arrow-left"></i> {% trans "Back to Sign In" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

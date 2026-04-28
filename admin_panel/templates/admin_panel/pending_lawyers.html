@@ -1,0 +1,274 @@
+
+{% extends "base_admin.html" %}
+
+{% block title %}Pending Lawyer Requests{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Pending Lawyer Requests</h2>
+
+<div class="card-box">
+    {% if requests %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle custom-table">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 50px;">Profile</th>
+                    <th>Name / Email</th>
+                    <th>Location</th>
+                    <th>Experience</th>
+                    {% comment %} <th>Fee Band</th> {% endcomment %}
+                    <th>Professional Info</th>
+                    <th>Documents</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for r in requests %}
+                <tr id="row-{{ r.id }}" 
+                    class="{% if request.GET.highlight_id|add:'0' == r.id %}highlight-row{% endif %}"
+                    {% if request.GET.highlight_id|add:'0' == r.id %}
+                    style="background-color: #e0f2fe !important;"
+                    {% endif %}>
+                    <td {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        <div class="avatar-cell">
+                        {% if r.profile_picture %}
+                            <img src="{{ r.profile_picture.url }}" alt="Profile" class="rounded-circle">
+                        {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-light text-primary d-flex align-items-center justify-content-center">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                        </div>
+                    </td>
+                    <td {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        <div class="d-flex flex-column">
+                            <span class="fw-bold text-dark">{{ r.user.get_full_name|default:r.user.username }}</span>
+                            <span class="text-muted small">{{ r.user.email }}</span>
+                            <span class="text-xs text-muted"><i class="fas fa-phone me-1"></i>{{ r.user.phone }}</span>
+                        </div>
+                    </td>
+                    <td {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        <div class="d-flex flex-column">
+                            <span class="fw-medium text-dark">{{ r.city.name }}</span>
+                            <span class="text-muted small">Bar: {{ r.bar_enrollment }}</span>
+                        </div>
+                    </td>
+                    <td {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        <span class="badge bg-info text-dark">{{ r.experience_years }} Years</span>
+                    </td>
+                    
+                    {% comment %} <td {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        <span class="badge bg-light text-dark border">Rs {{ r.fee_band.min_fee }} - {{ r.fee_band.max_fee }}</span>
+                    </td> {% endcomment %}
+
+                    <td style="max-width: 250px;" {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        <div class="mb-1">
+                            <small class="text-muted d-block mb-1">Practice Areas:</small>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for pa in r.practice_areas.all|slice:":3" %}
+                                <span class="badge bg-primary-subtle text-primary-custom" style="font-size: 0.7rem;">{{ pa.name }}</span>
+                                {% endfor %}
+                                {% if r.practice_areas.count > 3 %}
+                                <span class="badge bg-light text-muted" style="font-size: 0.7rem;">+{{ r.practice_areas.count|add:"-3" }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block mb-1">Courts:</small>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for c in r.courts.all|slice:":2" %}
+                                <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.7rem;">{{ c.name }}</span>
+                                {% endfor %}
+                                {% if r.courts.count > 2 %}
+                                <span class="badge bg-light text-muted" style="font-size: 0.7rem;">+{{ r.courts.count|add:"-2" }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        {% if r.verificationdocument_set.exists %}
+                        <div class="d-flex flex-column gap-1">
+                            {% for doc in r.verificationdocument_set.all %}
+                            <a href="{{ doc.file.url }}" target="_blank" class="btn btn-xs btn-outline-secondary text-start text-truncate" style="max-width: 120px;">
+                                <i class="fas fa-file-pdf me-1 text-danger"></i> Doc {{ forloop.counter }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted small italic">No documents</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-end" {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
+                        <div class="d-flex flex-column gap-2 align-items-end">
+                            <a href="{% url 'approve_lawyer' r.id %}" class="btn btn-success btn-sm w-100 justify-content-center">
+                                <i class="fas fa-check me-1"></i> Approve
+                            </a> 
+                            <a href="{% url 'reject_lawyer' r.id %}" class="btn btn-outline-danger btn-sm w-100 justify-content-center">
+                                <i class="fas fa-times me-1"></i> Reject
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-4">
+                <i class="fas fa-clipboard-check fa-3x text-muted opacity-50"></i>
+            </div>
+        </div>
+        <h5 class="text-muted">No pending requests</h5>
+        <p class="text-muted small">All lawyer requests have been processed.</p>
+    </div>
+    {% endif %}
+</div>
+
+</style>
+
+<style>
+    /* Avatar Cells */
+    .avatar-cell {
+        width: 50px;
+        height: 50px;
+        flex-shrink: 0;
+    }
+    .avatar-cell img, .avatar-cell .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Highlighted Row */
+    .highlight-row,
+    .highlight-row > td {
+        background-color: #e0f2fe !important; /* Slightly darker blue (Blue-100) */
+        transition: background-color 1.5s ease;
+    }
+
+    
+    /* Typography */
+    .text-xs {
+        font-size: 0.75rem;
+
+    }
+    .btn-xs {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Badges & Pills */
+    .badge {
+        border-radius: 50px !important; /* Pill shape */
+        padding: 0.35em 0.8em;
+    }
+    .bg-primary-subtle {
+        background-color: rgba(37, 99, 235, 0.1);
+    }
+    .bg-secondary-subtle {
+        background-color: rgba(107, 114, 128, 0.1);
+    }
+    .text-secondary {
+        color: #4b5563;
+    }
+    .gap-1 {
+        gap: 0.35rem; /* Slightly more gap */
+    }
+
+    /* Table Spacing */
+    .custom-table td {
+        vertical-align: middle;
+        padding: 1.25rem 0.75rem; /* More breathing room */
+    }
+
+    /* Custom Tooltip */
+    .more-badge-container {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .more-badge-container .custom-tooltip {
+        visibility: hidden;
+        width: 200px;
+        background-color: #364d59;
+        color: #fff;
+        text-align: left;
+        border-radius: 8px;
+        padding: 10px;
+        position: absolute;
+        z-index: 10;
+        bottom: 125%; /* Position above */
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        font-size: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .more-badge-container .custom-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #364d59 transparent transparent transparent;
+    }
+
+    .more-badge-container:hover .custom-tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    .tooltip-item {
+        display: block;
+        margin-bottom: 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 4px;
+    }
+    .tooltip-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .tooltip-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const highlightId = urlParams.get('highlight_id');
+        
+        if (highlightId) {
+            const row = document.getElementById('row-' + highlightId);
+            if (row) {
+                // Auto-scroll
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Force styling via JS as fallback
+                row.style.backgroundColor = '#e0f2fe';
+                
+                // Apply to children cells as well due to potential Bootstrap overwrites
+                const cells = row.querySelectorAll('td');
+                cells.forEach(cell => {
+                    cell.style.setProperty('background-color', '#e0f2fe', 'important');
+                });
+            }
+        }
+    });
+</script>
+
+{% endblock %}

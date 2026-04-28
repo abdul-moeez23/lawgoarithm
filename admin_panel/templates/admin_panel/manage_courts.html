@@ -1,0 +1,78 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Manage Courts{% endblock %}
+
+{% block page_title %}Manage Courts{% endblock %}
+
+{% block content %}
+
+
+<!-- Add Court Form -->
+<div class="card-box" style="margin-bottom:2rem;">
+    <h5 style="margin-bottom:1rem; color:var(--primary-navy);">
+        <i class="fas fa-plus-circle"></i> Add New Court
+    </h5>
+    <form method="POST" style="display:flex; gap:1rem; align-items:end;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <div style="flex:1;">
+            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Court Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g., Supreme Court of Pakistan" required>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Court
+        </button>
+    </form>
+</div>
+
+<!-- Courts List -->
+<div class="card-box">
+    <h5 style="margin-bottom:1.5rem; color:var(--primary-navy);">
+        <i class="fas fa-landmark"></i> All Courts ({{ courts.count }})
+    </h5>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Court Name</th>
+                <th style="width:200px; text-align:right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for court in courts %}
+            <tr>
+                <td>
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="court_id" value="{{ court.id }}">
+                        <input type="text" name="name" value="{{ court.name }}"
+                            style="border:1px solid #e5e7eb; padding:0.5rem; border-radius:6px; width:400px;">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </form>
+                </td>
+                <td style="text-align:right;">
+                    <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this court?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="court_id" value="{{ court.id }}">
+                        <button type="submit" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" style="text-align:center; color:#6b7280; padding:2rem;">
+                    No courts added yet
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

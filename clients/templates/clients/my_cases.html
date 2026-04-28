@@ -1,0 +1,57 @@
+{% extends 'clients/dashboard_base.html' %}
+
+{% block title %}My Cases - Lawgorithm{% endblock %}
+{% block header_title %}My Legal Matters{% endblock %}
+
+{% block actions %}
+    <a href="{% url 'post_case' %}" class="btn-primary">
+        <i class="fas fa-plus"></i> New Case
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead style="background: #f8fafc; border-bottom: 1px solid var(--border-color);">
+            <tr>
+                <th style="padding: 1rem 1.5rem; text-align: left; font-weight: 600; color: var(--text-gray);">Case Details</th>
+                <th style="padding: 1rem 1.5rem; text-align: left; font-weight: 600; color: var(--text-gray);">Category</th>
+                <th style="padding: 1rem 1.5rem; text-align: left; font-weight: 600; color: var(--text-gray);">Status</th>
+                <th style="padding: 1rem 1.5rem; text-align: left; font-weight: 600; color: var(--text-gray);">Created</th>
+                <th style="padding: 1rem 1.5rem; text-align: right; font-weight: 600; color: var(--text-gray);">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for case in cases %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 1.5rem;">
+                    <div style="font-weight: 600; color: var(--primary-navy);">{{ case.title }}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-gray);">ID: #{{ case.id }}</div>
+                </td>
+                <td style="padding: 1.5rem;">
+                    {{ case.category.name|default:"General" }}
+                    <div style="font-size: 0.8rem; color: var(--text-gray);">{{ case.subcategory.name }}</div>
+                </td>
+                <td style="padding: 1.5rem;">
+                    <span class="badge badge-{{ case.status }}">{{ case.get_status_display }}</span>
+                </td>
+                <td style="padding: 1.5rem; color: var(--text-gray); font-size: 0.9rem;">
+                    {{ case.created_at|date:"M d, Y" }}
+                </td>
+                <td style="padding: 1.5rem; text-align: right;">
+                    <a href="{% url 'case_detail' case.id %}" class="btn-outline" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                        View Case
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="padding: 4rem; text-align: center;">
+                    <p style="color: var(--text-gray);">You haven't posted any cases yet.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+name: Deploy website on push
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  web-deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+
+    steps:
+      - name: Get latest code
+        uses: actions/checkout@v4
+
+      - name: Deploy via lftp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+          lftp -c "
+          open ftp.kashmirtech.dev
+          user ${{ secrets.FTP_USERNAME }} ${{ secrets.FTP_PASSWORD }}
+          set ssl:verify-certificate no
+          set ftp:ssl-allow yes
+          set ftp:ssl-force yes
+          set ftp:ssl-protect-data yes
+          mirror -R --verbose --parallel=2 --exclude-glob .git* --exclude-glob .env --exclude-glob venv/ --exclude-glob __pycache__/ --exclude-glob *.sqlite3 --exclude-glob *.pyc ./ ./
+          bye
+          "

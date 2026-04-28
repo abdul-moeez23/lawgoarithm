@@ -1,0 +1,5 @@
+deployment:
+  python:
+    app: passenger_wsgi.py   # Your app entry point
+    requirements: requirements.txt
+    python_version: "3.12.1"

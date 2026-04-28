@@ -1,0 +1,25 @@
+                        <div class="dropdown-header">
+                            <span>Notifications</span>
+                            <span class="badge bg-light text-dark" style="font-size: 0.7rem;" id="notif-badge-header">{{ unread_notification_count|default:"0" }} New</span>
+                        </div>
+                        
+                        <div id="notif-list-body">
+                        {% if latest_notifications %}
+                            {% for notif in latest_notifications %}
+                            <a href="{% url 'mark_notification_read' notif.id %}" class="dropdown-item {% if not notif.is_read %}unread{% endif %}">
+                                <div class="notif-icon-circle" style="{% if notif.is_read %}background: #f3f4f6; color: #9ca3af;{% endif %}">
+                                    <i class="fas {% if 'Request' in notif.title %}fa-user-clock{% elif 'Approved' in notif.title %}fa-check-circle{% else %}fa-info{% endif %}"></i>
+                                </div>
+                                <div class="notif-content">
+                                    <h6 class="{% if not notif.is_read %}fw-bold text-dark{% else %}text-muted{% endif %}">{{ notif.title }}</h6>
+                                    <p>{{ notif.message|truncatechars:45 }}</p>
+                                    <span class="notif-time">{{ notif.created_at|timesince }} ago</span>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="dropdown-item" style="justify-content: center; color: var(--text-gray);">
+                                <small>No new notifications</small>
+                            </div>
+                        {% endif %}
+                        </div>
