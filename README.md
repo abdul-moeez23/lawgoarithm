@@ -25,8 +25,8 @@ To run the project, follow these steps:
 3.  **Access the applications**:
     - **Web Application**: [http://localhost:8001](http://localhost:8001)
     - **pgAdmin**: [http://localhost:5051](http://localhost:5051)
-        - **Login Email**: admin@admin.com
-        - **Login Password**: admin
+        - **Login Email**: your pgAdmin email
+        - **Login Password**: your pgAdmin password
 
 ## Database Management with pgAdmin
 
@@ -36,9 +36,9 @@ To run the project, follow these steps:
     - **Connection Tab**:
         - **Host name/address**: `db`
         - **Port**: `5432`
-        - **Maintenance database**: `lawyerplatform_db`
-        - **Username**: `postgres`
-        - **Password**: `postgres`
+        - **Maintenance database**: your database name
+        - **Username**: your database user
+        - **Password**: your database password
 3.  Click **Save**.
 
 > [!NOTE]
