@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.microsoft",
     "channels",
+    "pgvector.django",
 ]
 
 SITE_ID = int(os.getenv("SITE_ID", "1"))
@@ -174,7 +176,33 @@ CHANNEL_LAYERS = {
 }
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "models/gemini-2.5-flash")
 # When set, Gemini rewrites match card text after ranking (does not change who is matched).
 GEMINI_ENRICH_REASONS = os.getenv("GEMINI_ENRICH_REASONS", "1") == "1"
 MATCH_CANDIDATE_LIMIT = int(os.getenv("MATCH_CANDIDATE_LIMIT", "30"))
+MATCH_SCORE_V2_ENABLED = os.getenv("MATCH_SCORE_V2_ENABLED", "0") == "1"
+MATCH_SCORE_MIN = int(os.getenv("MATCH_SCORE_MIN", "45"))
+MATCH_SCORE_MAX = int(os.getenv("MATCH_SCORE_MAX", "96"))
+MATCH_SCORE_CALIBRATION_MODE = os.getenv("MATCH_SCORE_CALIBRATION_MODE", "minmax")
+try:
+    MATCH_SCORE_WEIGHTS = json.loads(
+        os.getenv(
+            "MATCH_SCORE_WEIGHTS",
+            '{"semantic":0.58,"subcategory":0.10,"court":0.07,"city":0.06,"experience":0.03,"success_rate":0.09,"review_quality":0.05,"review_confidence":0.02}',
+        )
+    )
+except json.JSONDecodeError:
+    MATCH_SCORE_WEIGHTS = {
+        "semantic": 0.58,
+        "subcategory": 0.10,
+        "court": 0.07,
+        "city": 0.06,
+        "experience": 0.03,
+        "success_rate": 0.09,
+        "review_quality": 0.05,
+        "review_confidence": 0.02,
+    }
+MATCH_REVIEW_PRIOR = float(os.getenv("MATCH_REVIEW_PRIOR", "0.75"))
+MATCH_REVIEW_BAYES_M = float(os.getenv("MATCH_REVIEW_BAYES_M", "8"))
+MATCH_SUCCESS_BAYES_M = float(os.getenv("MATCH_SUCCESS_BAYES_M", "12"))
+MATCH_REVIEW_CONFIDENCE_CAP = float(os.getenv("MATCH_REVIEW_CONFIDENCE_CAP", "0.70"))

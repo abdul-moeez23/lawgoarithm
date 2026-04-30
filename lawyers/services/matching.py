@@ -4,7 +4,7 @@ import re
 import time
 
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Avg, Count, Q
 
 logger = logging.getLogger(__name__)
 
@@ -78,13 +78,223 @@ class MatchingService:
 
     @classmethod
     def get_lawyer_embedding_text(cls, lawyer):
-        practice_areas = " ".join(pa.name for pa in lawyer.practice_areas.all())
-        courts = " ".join(c.name for c in lawyer.courts.all())
-        city = lawyer.city.name if lawyer.city else ""
+        practice_areas = ", ".join(pa.name for pa in lawyer.practice_areas.all()) or "Not listed"
+        courts = ", ".join(c.name for c in lawyer.courts.all()) or "Not listed"
+        city = lawyer.city.name if lawyer.city else "Not listed"
         display_name = lawyer.user.get_full_name() or lawyer.user.username
         return cls.preprocess_text(
-            f"{display_name} {practice_areas} {courts} {city} Experience: {lawyer.experience_years} years."
+            (
+                f"Lawyer: {display_name}. "
+                f"City: {city}. "
+                f"Practice areas: {practice_areas}. "
+                f"Courts: {courts}. "
+                f"Experience years: {lawyer.experience_years}."
+            )
         )
+
+    @staticmethod
+    def _get_score_weights():
+        default = {
+            "semantic": 0.58,
+            "subcategory": 0.10,
+            "court": 0.07,
+            "city": 0.06,
+            "experience": 0.03,
+            "success_rate": 0.09,
+            "review_quality": 0.05,
+            "review_confidence": 0.02,
+        }
+        configured = getattr(settings, "MATCH_SCORE_WEIGHTS", default)
+        if not isinstance(configured, dict):
+            return default
+        merged = {}
+        for key, fallback in default.items():
+            try:
+                merged[key] = float(configured.get(key, fallback))
+            except (TypeError, ValueError):
+                merged[key] = fallback
+        total = sum(max(v, 0.0) for v in merged.values())
+        if total <= 0:
+            return default
+        # Normalize to keep stable even if settings sum != 1.
+        return {k: max(v, 0.0) / total for k, v in merged.items()}
+
+    @staticmethod
+    def _get_score_bounds():
+        score_min = int(getattr(settings, "MATCH_SCORE_MIN", 50))
+        score_max = int(getattr(settings, "MATCH_SCORE_MAX", 92))
+        if score_min > score_max:
+            score_min, score_max = score_max, score_min
+        return score_min, score_max
+
+    @classmethod
+    def _compute_hybrid_components(cls, case, lawyer, semantic_similarity):
+        practice_areas = list(lawyer.practice_areas.all())
+        courts = list(lawyer.courts.all())
+        has_subcategory = bool(case.subcategory and case.subcategory in practice_areas)
+        has_court = bool(case.court_level and case.court_level in courts)
+        has_city = bool(case.city and lawyer.city_id == case.city_id)
+        experience_norm = min(max(float(lawyer.experience_years) / 20.0, 0.0), 1.0)
+        # Similarity can be in [-1, 1]; map to [0, 1] for blending.
+        semantic_norm = min(max((float(semantic_similarity) + 1.0) / 2.0, 0.0), 1.0)
+        quality = getattr(lawyer, "_quality_signals", {}) or {}
+        return {
+            "semantic": semantic_norm,
+            "subcategory": 1.0 if has_subcategory else 0.0,
+            "court": 1.0 if has_court else 0.0,
+            "city": 1.0 if has_city else 0.0,
+            "experience": experience_norm,
+            "success_rate": float(quality.get("success_rate", 0.5)),
+            "review_quality": float(quality.get("review_quality", 0.75)),
+            "review_confidence": float(quality.get("review_confidence", 0.0)),
+        }
+
+    @classmethod
+    def _blend_hybrid_score(cls, components):
+        weights = cls._get_score_weights()
+        return sum(components.get(key, 0.0) * weights.get(key, 0.0) for key in weights.keys())
+
+    @classmethod
+    def _calibrate_display_scores(cls, score_rows):
+        if not score_rows:
+            return score_rows
+        mode = str(getattr(settings, "MATCH_SCORE_CALIBRATION_MODE", "minmax")).lower().strip()
+        score_min, score_max = cls._get_score_bounds()
+        raws = [float(row["raw_score"]) for row in score_rows]
+        min_raw, max_raw = min(raws), max(raws)
+
+        if mode == "percentile":
+            ordered = sorted((row["raw_score"], idx) for idx, row in enumerate(score_rows))
+            ranks = [0] * len(score_rows)
+            for rank, (_, idx) in enumerate(ordered):
+                ranks[idx] = rank
+            denom = max(len(score_rows) - 1, 1)
+            for idx, row in enumerate(score_rows):
+                frac = ranks[idx] / denom
+                row["score"] = int(round(score_min + frac * (score_max - score_min)))
+            return score_rows
+
+        # Default min-max calibration
+        spread = max_raw - min_raw
+        if spread <= 1e-12:
+            midpoint = int(round((score_min + score_max) / 2))
+            for row in score_rows:
+                row["score"] = midpoint
+            return score_rows
+        for row in score_rows:
+            frac = (float(row["raw_score"]) - min_raw) / spread
+            row["score"] = int(round(score_min + frac * (score_max - score_min)))
+        return score_rows
+
+    @classmethod
+    def _apply_hybrid_scores(cls, case, scored_candidates, top_k):
+        if not scored_candidates:
+            return []
+        cls._attach_lawyer_quality_signals([item["lawyer"] for item in scored_candidates])
+        rows = []
+        for item in scored_candidates:
+            sim = float(item.get("_similarity", -1.0))
+            components = cls._compute_hybrid_components(case, item["lawyer"], sim)
+            raw_score = cls._blend_hybrid_score(components)
+            item["_score_components"] = components
+            item["raw_score"] = raw_score
+            rows.append(item)
+        rows = cls._calibrate_display_scores(rows)
+        rows.sort(
+            key=lambda item: (
+                float(item.get("raw_score", 0.0)),
+                float(item.get("_similarity", -1.0)),
+                item["lawyer"].experience_years,
+            ),
+            reverse=True,
+        )
+        selected = rows[:top_k]
+        duplicate_rate = 0.0
+        if selected:
+            unique_scores = len({row.get("score") for row in selected})
+            duplicate_rate = 1.0 - (unique_scores / len(selected))
+        logger.info(
+            "match_score_v2_summary case_id=%s top_k=%s duplicate_score_rate=%.3f",
+            getattr(case, "id", None),
+            top_k,
+            duplicate_rate,
+        )
+        for row in selected:
+            logger.info(
+                "match_score_v2_detail case_id=%s lawyer_id=%s score=%s raw=%.4f components=%s",
+                getattr(case, "id", None),
+                row["lawyer"].id,
+                row.get("score"),
+                float(row.get("raw_score", 0.0)),
+                row.get("_score_components", {}),
+            )
+            row.pop("raw_score", None)
+            row.pop("_score_components", None)
+        return selected
+
+    @classmethod
+    def _attach_lawyer_quality_signals(cls, lawyers):
+        if not lawyers:
+            return
+        try:
+            from clients.models import Interaction, Rating
+        except Exception:
+            for lawyer in lawyers:
+                lawyer._quality_signals = {"success_rate": 0.5, "review_quality": 0.75, "review_confidence": 0.0}
+            return
+
+        lawyer_ids = [lawyer.id for lawyer in lawyers]
+        interaction_rows = (
+            Interaction.objects.filter(lawyer_id__in=lawyer_ids)
+            .values("lawyer_id")
+            .annotate(
+                total_interactions=Count("id"),
+                successful_interactions=Count("id", filter=Q(status__in=["accepted", "hired"])),
+            )
+        )
+        rating_rows = (
+            Rating.objects.filter(interaction__lawyer_id__in=lawyer_ids)
+            .values("interaction__lawyer_id")
+            .annotate(avg_stars=Avg("stars"), review_count=Count("id"))
+        )
+        by_lawyer = {}
+        for row in interaction_rows:
+            total = int(row.get("total_interactions") or 0)
+            success = int(row.get("successful_interactions") or 0)
+            # Neutral default to avoid unfairly depressing brand-new lawyers.
+            success_rate = (success / total) if total > 0 else 0.5
+            by_lawyer[row["lawyer_id"]] = {
+                "success_rate": min(max(success_rate, 0.0), 1.0),
+                "interaction_total": total,
+            }
+        prior_review = float(getattr(settings, "MATCH_REVIEW_PRIOR", 0.75))
+        review_bayes_m = float(getattr(settings, "MATCH_REVIEW_BAYES_M", 8.0))
+        success_bayes_m = float(getattr(settings, "MATCH_SUCCESS_BAYES_M", 12.0))
+        confidence_cap = float(getattr(settings, "MATCH_REVIEW_CONFIDENCE_CAP", 0.70))
+        confidence_cap = min(max(confidence_cap, 0.0), 1.0)
+        for row in rating_rows:
+            lawyer_id = row["interaction__lawyer_id"]
+            avg = float(row.get("avg_stars") or 0.0) / 5.0
+            count = int(row.get("review_count") or 0)
+            confidence = count / (count + review_bayes_m) if (count + review_bayes_m) > 0 else 0.0
+            confidence = min(confidence, confidence_cap)
+            blended_review = (confidence * avg) + ((1.0 - confidence) * prior_review)
+            entry = by_lawyer.setdefault(lawyer_id, {})
+            entry["review_quality"] = min(max(blended_review, 0.0), 1.0)
+            entry["review_confidence"] = min(max(confidence, 0.0), 1.0)
+
+        for lawyer in lawyers:
+            defaults = by_lawyer.get(lawyer.id, {})
+            # Smooth success rate toward a neutral prior to protect cold-start lawyers.
+            interaction_total = int(defaults.get("interaction_total", 0))
+            raw_success = float(defaults.get("success_rate", 0.5))
+            success_confidence = interaction_total / (interaction_total + success_bayes_m) if (interaction_total + success_bayes_m) > 0 else 0.0
+            smoothed_success = (success_confidence * raw_success) + ((1.0 - success_confidence) * 0.5)
+            lawyer._quality_signals = {
+                "success_rate": float(smoothed_success),
+                "review_quality": float(defaults.get("review_quality", prior_review)),
+                "review_confidence": float(defaults.get("review_confidence", 0.0)),
+            }
 
     @classmethod
     def build_lawyer_summaries(cls, candidates):
@@ -171,8 +381,7 @@ class MatchingService:
     @classmethod
     def _compute_embedding_similarities(cls, case, candidates):
         try:
-            import numpy as np
-            from sklearn.metrics.pairwise import cosine_similarity
+            from pgvector.django import CosineDistance
         except (ImportError, RuntimeError) as exc:
             logger.warning("Embedding dependencies unavailable: %s", exc)
             return None
@@ -181,13 +390,31 @@ class MatchingService:
         if model is None or not candidates:
             return None
 
-        case_embedding = model.encode([cls.build_case_prompt_block(case)])[0]
-        lawyer_texts = [cls.get_lawyer_embedding_text(lawyer) for lawyer in candidates]
-        if not lawyer_texts:
-            lawyer_embeddings = np.zeros((len(candidates), 384))
-        else:
-            lawyer_embeddings = model.encode(lawyer_texts)
-        return cosine_similarity([case_embedding], lawyer_embeddings)[0]
+        from lawyers.models import LawyerProfile
+
+        case_embedding = [float(v) for v in model.encode([cls.build_case_prompt_block(case)])[0]]
+        candidate_ids = [lawyer.id for lawyer in candidates]
+        distances = {
+            lawyer_id: float(distance)
+            for lawyer_id, distance in LawyerProfile.objects.filter(
+                id__in=candidate_ids,
+                embedding_vector__isnull=False,
+            )
+            .annotate(distance=CosineDistance("embedding_vector", case_embedding))
+            .values_list("id", "distance")
+        }
+        if not distances:
+            return None
+
+        similarities = []
+        for lawyer in candidates:
+            distance = distances.get(lawyer.id)
+            if distance is None:
+                similarities.append(None)
+                continue
+            # CosineDistance is (1 - cosine_similarity) so convert back for scoring.
+            similarities.append(1.0 - distance)
+        return similarities
 
     @classmethod
     def _fallback_embedding_rank(cls, case, candidates, top_k=5):
@@ -205,8 +432,13 @@ class MatchingService:
 
         scored_candidates = []
         for idx, lawyer in enumerate(candidates):
-            normalized_score = int(max(0, min(99, round(((float(similarities[idx]) + 1) / 2) * 99))))
-            sim = float(similarities[idx])
+            sim = similarities[idx]
+            if sim is None:
+                normalized_score = min(max(lawyer.experience_years * 3, 1), 99)
+                sim = -1.0
+            else:
+                sim = float(sim)
+                normalized_score = int(max(0, min(99, round(((sim + 1) / 2) * 99))))
             base_reasons = cls._build_default_reasons(case, lawyer)
             if sim >= 0.4:
                 semantic = "Your case description closely matches this lawyer's practice profile."
@@ -226,14 +458,17 @@ class MatchingService:
                     "_similarity": sim,
                 }
             )
-
-        scored_candidates.sort(
-            key=lambda item: (item["_similarity"], item["lawyer"].experience_years),
-            reverse=True,
-        )
+        if getattr(settings, "MATCH_SCORE_V2_ENABLED", False):
+            scored_candidates = cls._apply_hybrid_scores(case, scored_candidates, top_k=top_k)
+        else:
+            scored_candidates.sort(
+                key=lambda item: (item["_similarity"], item["lawyer"].experience_years),
+                reverse=True,
+            )
+            scored_candidates = scored_candidates[:top_k]
         for item in scored_candidates:
             item.pop("_similarity", None)
-        return scored_candidates[:top_k]
+        return scored_candidates
 
     @classmethod
     def rank_with_gemini(cls, case, candidates, top_k=5):
@@ -395,6 +630,15 @@ class MatchingService:
             matches = gemini_matches
         else:
             matches = cls._fallback_embedding_rank(case, candidates, top_k=top_k)
+
+        # Keep Gemini as explanation/ranking helper, but score authority remains deterministic.
+        if getattr(settings, "MATCH_SCORE_V2_ENABLED", False):
+            match_by_id = {m["lawyer"].id: m for m in matches}
+            rescored = cls._fallback_embedding_rank(case, [m["lawyer"] for m in matches], top_k=top_k)
+            for row in rescored:
+                existing = match_by_id.get(row["lawyer"].id)
+                if existing:
+                    existing["score"] = row["score"]
 
         return cls.enrich_match_reasons_with_gemini(case, matches)
 

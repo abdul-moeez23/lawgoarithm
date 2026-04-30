@@ -1,18 +1,16 @@
 from .base import *
+import os
 
 DEBUG = True
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": 'lawyerplatform_test_db',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET default_storage_engine=InnoDB",
-        },
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("DB_NAME", "lawyerplatform_test_db"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
@@ -20,6 +18,9 @@ DATABASES = {
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
+
+# Keep tests deterministic and avoid model downloads from signal-triggered embedding refresh.
+AUTO_REFRESH_LAWYER_EMBEDDINGS = False
 
 # Ensure tests don't send real emails
 # EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'

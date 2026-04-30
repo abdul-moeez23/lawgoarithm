@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 # from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator, MaxValueValidator
+from pgvector.django import VectorField
 from users.models import User, City, Court, SubCategory, FeeBand, Language
 
 
@@ -25,6 +26,9 @@ class LawyerProfile(models.Model):
         choices=(('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')),
         default='pending'
     )
+    embedding_vector = VectorField(dimensions=384, blank=True, null=True)
+    embedding_model_version = models.CharField(max_length=120, default="", blank=True)
+    embedding_updated_at = models.DateTimeField(blank=True, null=True)
 
 
 
