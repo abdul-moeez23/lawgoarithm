@@ -1,5 +1,5 @@
 import logging
-
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout as auth_logout
 from django.contrib import messages
@@ -9,17 +9,18 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
+from django.urls import reverse
+from django.views.decorators.cache import never_cache
+from django.db.models import Avg, Count
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from allauth.account.models import EmailAddress
 
 logger = logging.getLogger(__name__)
 
-
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.cache import never_cache
-from allauth.account.models import EmailAddress
-
 from lawyers.models import LawyerProfile
-from .models import Case, CaseDocument, Interaction, Message, Rating
-from users.models import City, SubCategory,User
+from .models import Case, CaseDocument, Interaction, Message, Rating, Appointment
+from users.models import City, SubCategory, User, Notification
 
 # Import MatchingService
 from lawyers.services.matching import MatchingService
@@ -27,7 +28,6 @@ from lawyers.services.matching import MatchingService
 from .forms import CaseForm
 
 def search_lawyers(request):
-    from django.db.models import Avg, Count
     practice_area = request.GET.get('practice_area')
     city = request.GET.get('city')
 
@@ -66,12 +66,10 @@ def signin(request):
         user = authenticate(request, username=email, password=password)
         
         if user:
-            print(f"DEBUG: Authenticated {user.username}, role: {user.role}")
             login(request, user)
             messages.success(request, f"Successfully signed in as {user.username}.")
             
             if user.role == 'lawyer':
-                from lawyers.models import LawyerProfile
                 try:
                     lp = user.lawyer_profile
                     # Handle all verification states
@@ -106,11 +104,21 @@ def signin(request):
 
 def client_signup(request):
     if request.method == "POST":
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+
+        # Name validation: Only letters and spaces, and not empty
+        name_regex = r'^[a-zA-Z\s]+$'
+        if not first_name or not last_name:
+            messages.error(request, "First and Last names cannot be empty or just spaces.")
+            return redirect('client_signup')
+        
+        if not re.match(name_regex, first_name) or not re.match(name_regex, last_name):
+            messages.error(request, "First and Last names should only contain letters and spaces.")
+            return redirect('client_signup')
 
         if password != confirm_password:
             messages.error(request, "Passwords do not match!")
@@ -120,12 +128,14 @@ def client_signup(request):
             messages.error(request, "Email already exists!")
             return redirect('client_signup')
 
-        # Custom password validation for uppercase and special symbol
-        import re
+        # Custom password validation
+        if ' ' in password:
+            messages.error(request, "Password cannot contain spaces.")
+            return redirect('client_signup')
         if not re.search(r'[A-Z]', password):
             messages.error(request, "Password must contain at least one uppercase letter.")
             return redirect('client_signup')
-        if not re.search(r'[\W_]', password):
+        if not re.search(r'[^A-Za-z0-9\s]', password):
             messages.error(request, "Password must contain at least one special character.")
             return redirect('client_signup')
 
@@ -189,8 +199,6 @@ def client_dashboard(request):
     hired_count = hired_interactions.count()
     
     # Upcoming Appointments
-    from django.utils import timezone
-    from .models import Appointment
     appointments_count = Appointment.objects.filter(
         attendee=user,
         datetime__gte=timezone.now(),
@@ -249,8 +257,6 @@ def case_detail(request, pk):
         
         # Broadcast via WebSocket
         try:
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f'chat_{pk}',
@@ -271,20 +277,18 @@ def case_detail(request, pk):
             print(f"WebSocket Broadcast Error: {e}")
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            from django.http import JsonResponse
             return JsonResponse({'status': 'success', 'message': 'Document uploaded.'})
 
         messages.success(request, "Document uploaded successfully.")
         return redirect('case_detail', pk=pk)
 
     interactions = Interaction.objects.filter(case=case).select_related('lawyer', 'lawyer__user', 'lawyer__city').order_by('-created_at')
-    documents = CaseDocument.objects.filter(case=case).exclude(hidden_for=request.user).order_by('-uploaded_at')
+    documents = CaseDocument.objects.filter(case=case).exclude(hidden_for=request.user).exclude(is_deleted_everyone=True).order_by('-uploaded_at')
     
     # Chat Logic (Basic: Get messages for this case)
     chat_messages = Message.objects.filter(case=case).exclude(is_deleted_everyone=True).exclude(hidden_for=request.user).order_by('created_at')
     
     # Fetch Appointments
-    from .models import Appointment
     appointments = Appointment.objects.filter(case=case).order_by('datetime')
 
     active_interaction = interactions.filter(status__in=['hired', 'accepted']).first()
@@ -306,10 +310,20 @@ def case_detail(request, pk):
 def client_profile(request):
     user = request.user
     if request.method == "POST":
-        user.first_name = request.POST.get('first_name')
-        user.last_name = request.POST.get('last_name')
+        user.first_name = request.POST.get('first_name', '').strip()
+        user.last_name = request.POST.get('last_name', '').strip()
         user.phone = request.POST.get('phone')
-        # Handle password change separately or here if simple
+
+        # Name validation
+        name_regex = r'^[a-zA-Z\s]+$'
+        if not user.first_name or not user.last_name:
+            messages.error(request, "First and Last names cannot be empty or just spaces.")
+            return redirect('client_profile')
+
+        if not re.match(name_regex, user.first_name) or not re.match(name_regex, user.last_name):
+            messages.error(request, "First and Last names should only contain letters and spaces.")
+            return redirect('client_profile')
+
         user.save()
         messages.success(request, "Profile updated successfully.")
         return redirect('client_profile')
@@ -430,9 +444,6 @@ def connect_to_lawyer(request, case_id, lawyer_id):
             messages.info(request, f"Connection request resent to {lawyer_profile.user.get_full_name()}.")
             
             # Notify Lawyer via WebSocket (Re-sent)
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
-            
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"lawyer_{lawyer_profile.user.id}",
@@ -450,15 +461,20 @@ def connect_to_lawyer(request, case_id, lawyer_id):
                 }
             )
 
+            # Persistence Notification
+            Notification.objects.create(
+                recipient=lawyer_profile.user,
+                title="New Connection Request",
+                message=f"{case.client.get_full_name() or case.client.email} has sent a connection request for case: {case.title}",
+                link=f"/lawyer/lawyer-dashboard/" # Or a specific case detail link if exists
+            )
+
         else:
             messages.info(request, f"You have already sent a connection request to {lawyer_profile.user.get_full_name()}.")
     else:
         messages.success(request, f"Connection request sent to {lawyer_profile.user.get_full_name()}!")
         
         # Notify Lawyer via WebSocket (New)
-        from channels.layers import get_channel_layer
-        from asgiref.sync import async_to_sync
-        
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"lawyer_{lawyer_profile.user.id}",
@@ -475,6 +491,14 @@ def connect_to_lawyer(request, case_id, lawyer_id):
                 }
             }
         )
+        
+        # Persistence Notification
+        Notification.objects.create(
+            recipient=lawyer_profile.user,
+            title="New Connection Request",
+            message=f"{case.client.get_full_name() or case.client.email} has sent a connection request for case: {case.title}",
+            link=f"/lawyer/lawyer-dashboard/"
+        )
     
     return redirect('match_results', case_id=case.id)
 
@@ -484,7 +508,6 @@ def client_send_message(request, case_id):
     """
     Handle sending a message from Client to Lawyer.
     """
-    from django.urls import reverse
     if request.method != 'POST':
         return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=messages')
         
@@ -510,8 +533,6 @@ def client_send_message(request, case_id):
         )
         
         # Real-time Broadcast
-        from channels.layers import get_channel_layer
-        from asgiref.sync import async_to_sync
         channel_layer = get_channel_layer()
         if channel_layer:
             async_to_sync(channel_layer.group_send)(
@@ -537,6 +558,14 @@ def client_send_message(request, case_id):
                     'timestamp': msg.created_at.strftime("%I:%M %p")
                 }
             )
+
+        # Create persistent notification for the recipient (Lawyer)
+        Notification.objects.create(
+            recipient=recipient,
+            title=f"New Message from Client: {request.user.get_full_name() or request.user.email}",
+            message=content[:100] + ("..." if len(content) > 100 else ""),
+            link=reverse('lawyer_case_detail', kwargs={'case_id': case.id}) + "?tab=messages"
+        )
     
     return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=messages')
 
@@ -546,14 +575,12 @@ def client_messages(request):
     """
     List all cases/chats for the client.
     """
-    from .models import Interaction
     # Get all interactions for this client where status is accepted or hired
     interactions = Interaction.objects.filter(
         case__client=request.user,
         status__in=['invited', 'accepted', 'hired']
     ).select_related('case', 'lawyer', 'lawyer__user').order_by('-case__updated_at')
     
-    from .models import Message
     for interaction in interactions:
         interaction.unread_count = Message.objects.filter(
             case=interaction.case, recipient=request.user, is_read=False
@@ -567,7 +594,6 @@ def client_messages(request):
 
 @login_required(login_url='signin')
 def mark_notification_read(request, id):
-    from users.models import Notification
     notification = get_object_or_404(Notification, id=id, recipient=request.user)
     notification.is_read = True
     notification.save()
@@ -575,7 +601,6 @@ def mark_notification_read(request, id):
 
 @login_required(login_url='signin')
 def mark_all_notifications_read(request):
-    from users.models import Notification
     Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
     return JsonResponse({'status': 'success'})
 
@@ -603,8 +628,6 @@ def hire_lawyer(request, case_id, lawyer_id):
     case.save()
     
     # Send WebSocket notification to the lawyer
-    from channels.layers import get_channel_layer
-    from asgiref.sync import async_to_sync
     channel_layer = get_channel_layer()
     if channel_layer:
         # Notify lawyer that they are HIRED
@@ -615,6 +638,14 @@ def hire_lawyer(request, case_id, lawyer_id):
                 "message": f"Congratulations! You have been hired for the case: {case.title}",
                 "case_id": case.id
             }
+        )
+        
+        # Persistence Notification
+        Notification.objects.create(
+            recipient=interaction.lawyer.user,
+            title="Congratulations! You've been Hired",
+            message=f"You have been officially hired by {case.client.get_full_name() or case.client.email} for the case: {case.title}",
+            link=f"/lawyer/lawyer-dashboard/"
         )
         
         # Notify client dashboard to refresh status on match results if open
@@ -651,7 +682,6 @@ def lawyer_public_profile(request, pk):
     """
     Public profile view for clients to see lawyer details and reviews.
     """
-    from django.db.models import Avg, Count
     lawyer_profile = get_object_or_404(LawyerProfile, pk=pk)
     
     # Verify lawyer is approved
@@ -676,7 +706,6 @@ def lawyer_public_profile(request, pk):
 
 @login_required(login_url='signin')
 def client_delete_document(request, document_id, mode):
-    from .models import CaseDocument
     document = get_object_or_404(CaseDocument, id=document_id)
     
     # Permission check: user should be the client of the case or the uploader
@@ -690,15 +719,24 @@ def client_delete_document(request, document_id, mode):
     elif mode == 'everyone':
         # Only uploader can delete for everyone
         if document.uploaded_by == request.user:
+            # Check time limit: 10 minutes
+            from django.utils import timezone
+            import datetime
+            time_diff = timezone.now() - document.uploaded_at
+
+            if time_diff.total_seconds() > 600:
+                messages.error(request, "You can only delete for everyone within 10 minutes. Please use 'Hide for Me'.")
+                return redirect(request.META.get('HTTP_REFERER', reverse('client_dashboard')))
+
             doc_id = document.id
             case_id = document.case.id
-            document.delete()
+            # Soft delete for everyone (keep in DB for Admin/Audit)
+            document.is_deleted_everyone = True
+            document.save()
             success = True
             message = "Document deleted for everyone."
             
             # Broadcast deletion via WebSocket
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
             channel_layer = get_channel_layer()
             if channel_layer:
                 async_to_sync(channel_layer.group_send)(

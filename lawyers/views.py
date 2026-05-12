@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 # from .models import User
 from lawyers.models import LawyerProfile
 from django.contrib.auth.hashers import make_password,check_password
-from users.models import User,City, Court, Language, FeeBand,SubCategory
+from users.models import User, City, Court, Language, FeeBand, SubCategory, Notification
 from lawyers.models import VerificationDocument
 from django.views.decorators.cache import never_cache
 from lawyers.utils import notify_admin
@@ -70,11 +70,22 @@ def lawyer_login(request):
 
 def lawyer_signup(request):
     if request.method == "POST":
-        first_name = request.POST.get("first_name")
-        last_name = request.POST.get("last_name")
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
         email = request.POST.get("email")
         phone = request.POST.get("phone")
         password = request.POST.get("password")
+
+        # Name validation: Only letters and spaces, and not empty
+        import re
+        name_regex = r'^[a-zA-Z\s]+$'
+        if not first_name or not last_name:
+            messages.error(request, "First and Last names cannot be empty or just spaces.")
+            return redirect("lawyer_signup")
+
+        if not re.match(name_regex, first_name) or not re.match(name_regex, last_name):
+            messages.error(request, "First and Last names should only contain letters and spaces.")
+            return redirect("lawyer_signup")
 
         # Check existing user
         existing_user = User.objects.filter(username=email).first()
@@ -82,12 +93,15 @@ def lawyer_signup(request):
             messages.error(request, "Email already exists and is verified. Please log in.")
             return redirect("lawyer_signup")
 
-        # Custom password validation for uppercase and special symbol
+        # Custom password validation
         import re
+        if ' ' in password:
+            messages.error(request, "Password cannot contain spaces.")
+            return redirect("lawyer_signup")
         if not re.search(r'[A-Z]', password):
             messages.error(request, "Password must contain at least one uppercase letter.")
             return redirect("lawyer_signup")
-        if not re.search(r'[\W_]', password):
+        if not re.search(r'[^A-Za-z0-9\s]', password):
             messages.error(request, "Password must contain at least one special character.")
             return redirect("lawyer_signup")
 
@@ -149,11 +163,16 @@ def lawyer_profile_complete(request):
         lp.bar_enrollment = request.POST.get("bar_enrollment")
         lp.city_id = request.POST.get("city")
         # lp.fee_band_id = request.POST.get("fee_band")
-        lp.experience_years = request.POST.get("experience")
+        
+        # Handle enrollment_date if provided
+        enrollment_date = request.POST.get("enrollment_date")
+        if enrollment_date:
+            lp.enrollment_date = enrollment_date
+            
         if request.FILES.get('profile_picture'):
             lp.profile_picture = request.FILES['profile_picture']
         lp.verification_status = 'pending'
-        
+        lp.rejection_reason = ""
         lp.save()
 
         courts_ids = request.POST.getlist("courts")
@@ -198,12 +217,19 @@ def lawyer_profile_complete(request):
 
     from users.models import City, Court, SubCategory, FeeBand, Language
     
+    # Try to get existing profile for pre-filling
+    try:
+        lp = LawyerProfile.objects.get(user=request.user)
+    except LawyerProfile.DoesNotExist:
+        lp = None
+
     context = {
         'cities': City.objects.all(),
         # 'fee_bands': FeeBand.objects.all(),
         'courts': Court.objects.all(),
         'languages': Language.objects.all(),
         'practice_areas': SubCategory.objects.all(),
+        'lawyer_profile': lp,
     }
     
     return render(request, "lawyers/profile_complete.html", context)
@@ -257,6 +283,12 @@ def lawyer_dashboard(request):
         uploaded_by=lawyer
     ).exclude(hidden_for=lawyer).count()
     
+    # Get all active cases for the document upload dropdown
+    all_cases = Interaction.objects.filter(
+        lawyer=lawyer_profile,
+        status__in=['accepted', 'hired']
+    ).select_related('case', 'case__client').order_by('-created_at')
+
     context = {
         'lawyer': lawyer,
         'lawyer_profile': lawyer_profile,
@@ -265,6 +297,7 @@ def lawyer_dashboard(request):
         'active_clients': active_clients,
         'appointments_count': appointments_count,
         'documents_count': documents_count,
+        'all_cases': all_cases,
     }
     
     return render(request, 'lawyers/lawyer_dashboard.html', context)
@@ -294,13 +327,29 @@ def edit_lawyer_profile(request):
     if request.method == "POST":
 
         # ========== BASIC INFO ==========
-        user.first_name = request.POST.get("first_name")
+        user.first_name = request.POST.get("first_name", "").strip()
         user.phone = request.POST.get("phone")
+
+        # Name validation
+        import re
+        name_regex = r'^[a-zA-Z\s]+$'
+        if not user.first_name:
+            messages.error(request, "Name cannot be empty or just spaces.")
+            return redirect("edit_lawyer_profile")
+
+        if not re.match(name_regex, user.first_name):
+            messages.error(request, "Name should only contain letters and spaces.")
+            return redirect("edit_lawyer_profile")
+
         user.save()
 
         # ========== LAWYER PROFILE FIELDS ==========
         lawyer_profile.city_id = request.POST.get("city")
-        lawyer_profile.experience_years = request.POST.get("experience")
+        
+        enrollment_date = request.POST.get("enrollment_date")
+        if enrollment_date:
+            lawyer_profile.enrollment_date = enrollment_date
+            
         # lawyer_profile.fee_band_id = request.POST.get("fee_band")
 
         # ========== PROFILE PICTURE ==========
@@ -332,8 +381,20 @@ def edit_lawyer_profile(request):
         if document_file:
             lawyer_profile.verificationdocument_set.create(file=document_file)
 
+        # Send back for admin approval
+        lawyer_profile.verification_status = 'pending'
+        lawyer_profile.rejection_reason = ""
         lawyer_profile.save()
 
+        from django.urls import reverse
+        from lawyers.utils import notify_admin
+        notify_admin(
+            title="Lawyer Profile Updated",
+            message=f"{request.user.first_name} ({request.user.email}) has updated their profile and requires re-approval.",
+            link=reverse('pending_lawyer_requests') + f"?highlight_id={lawyer_profile.id}"
+        )
+
+        messages.success(request, "Profile updated successfully! Your changes have been sent to the admin for re-approval.")
         return redirect("lawyer_dashboard")
 
     # ========== DATA FOR TEMPLATE ==========
@@ -610,7 +671,7 @@ def lawyer_case_detail(request, case_id):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'message': 'You must accept the case before uploading documents.'}, status=403)
     
-    documents = CaseDocument.objects.filter(case=case).exclude(hidden_for=request.user).order_by('-uploaded_at')
+    documents = CaseDocument.objects.filter(case=case).exclude(hidden_for=request.user).exclude(is_deleted_everyone=True).order_by('-uploaded_at')
     chat_messages = Message.objects.filter(case=case).exclude(is_deleted_everyone=True).exclude(hidden_for=request.user).order_by('created_at')
     appointments = Appointment.objects.filter(case=case).order_by('datetime')
     
@@ -682,6 +743,14 @@ def send_message(request, case_id):
                     'timestamp': msg.created_at.strftime("%I:%M %p")
                 }
             )
+
+        # Create persistent notification for the recipient
+        Notification.objects.create(
+            recipient=case.client,
+            title=f"New Message from {request.user.get_full_name() or request.user.email}",
+            message=content[:100] + ("..." if len(content) > 100 else ""),
+            link=reverse('case_detail', kwargs={'pk': case.id}) + "?tab=messages"
+        )
     
     return redirect(reverse('lawyer_case_detail', kwargs={'case_id': case_id}) + '?tab=messages')
 
@@ -730,11 +799,19 @@ def schedule_appointment(request, case_id):
             notes=notes,
             status='scheduled'
         )
+
+        # Persistence Notification
+        Notification.objects.create(
+            recipient=case.client,
+            title="Appointment Scheduled",
+            message=f"Lawyer {request.user.get_full_name()} has scheduled an appointment: {title} for {dt_aware.strftime('%d %b %Y at %I:%M %p')}",
+            link=f"/case/{case.id}/"
+        )
         
         messages.success(request, "Appointment scheduled successfully.")
-        return redirect('lawyer_case_detail', case_id=case_id)
+        return redirect(reverse('lawyer_case_detail', kwargs={'case_id': case_id}) + '?tab=appointments')
         
-    return redirect('lawyer_case_detail', case_id=case_id)
+    return redirect(reverse('lawyer_case_detail', kwargs={'case_id': case_id}) + '?tab=appointments')
 
 
 @login_required(login_url='/lawyer/lawyer-login/')
@@ -837,6 +914,14 @@ def update_case_progress(request, case_id):
                 }
             )
 
+        # Persistence Notification
+        Notification.objects.create(
+            recipient=case.client,
+            title="Case Progress Updated",
+            message=f"Progress updated for case: {case.title}. Status: {case.detailed_status}",
+            link=f"/case/{case.id}/"
+        )
+
         messages.success(request, "Case progress updated successfully.")
         
     return redirect(f"{reverse('lawyer_case_detail', kwargs={'case_id': case_id})}?tab=details")
@@ -861,7 +946,7 @@ def lawyer_documents(request):
     """
     from clients.models import CaseDocument
    
-    documents = CaseDocument.objects.filter(uploaded_by=request.user).exclude(hidden_for=request.user).order_by('-uploaded_at')
+    documents = CaseDocument.objects.filter(uploaded_by=request.user).exclude(hidden_for=request.user).exclude(is_deleted_everyone=True).order_by('-uploaded_at')
     return render(request, 'lawyers/documents.html', {'documents': documents})
 
 
@@ -882,26 +967,38 @@ def delete_document(request, document_id, mode):
     elif mode == 'everyone':
         # Verify permissions: only uploader can delete for everyone
         if document.uploaded_by == request.user:
-            doc_id = document.id
-            case_id = document.case.id
-            document.delete()
-            success = True
-            message = "Document deleted for everyone."
+            # Check time limit: only allow delete for everyone within 10 minutes
+            from django.utils import timezone
+            import datetime
+            time_diff = timezone.now() - document.uploaded_at
             
-            # Broadcast deletion via WebSocket
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
-            channel_layer = get_channel_layer()
-            if channel_layer:
-                async_to_sync(channel_layer.group_send)(
-                    f'chat_{case_id}',
-                    {
-                        'type': 'document_deleted',
-                        'document_id': doc_id
-                    }
-                )
+            if time_diff.total_seconds() > 600: # 10 minutes
+                message = "You can only delete for everyone within 10 minutes of uploading. Please use 'Hide for Me' instead."
+                success = False
+            else:
+                doc_id = document.id
+                case_id = document.case.id
+                # Soft delete for everyone (keep in DB for Admin/Audit)
+                document.is_deleted_everyone = True
+                document.save()
+                success = True
+                message = "Document deleted for everyone."
+                
+                # Broadcast deletion via WebSocket
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    async_to_sync(channel_layer.group_send)(
+                        f'chat_{case_id}',
+                        {
+                            'type': 'document_deleted',
+                            'document_id': doc_id
+                        }
+                    )
         else:
             message = "You can only delete files for everyone that you uploaded."
+            success = False
             
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return JsonResponse({'success': success, 'message': message})
@@ -912,3 +1009,110 @@ def delete_document(request, document_id, mode):
         messages.error(request, message)
 
     return redirect(request.META.get('HTTP_REFERER', reverse('lawyer_dashboard')))
+
+@login_required(login_url='/lawyer/lawyer-login/')
+@approved_lawyer_required
+def lawyer_upload_document(request):
+    """
+    Global document upload from dashboard or documents page.
+    """
+    if request.method == "POST":
+        case_id = request.POST.get('case_id')
+        doc_file = request.FILES.get('document')
+        doc_title = request.POST.get('title')
+        
+        if not case_id or not doc_file:
+            messages.error(request, "Please select a case and a file.")
+            return redirect(request.META.get('HTTP_REFERER', 'lawyer_dashboard'))
+            
+        from clients.models import Case, CaseDocument, Interaction
+        case = get_object_or_404(Case, pk=case_id)
+        
+        # Verify access
+        get_object_or_404(Interaction, case=case, lawyer__user=request.user)
+        
+        CaseDocument.objects.create(
+            case=case,
+            file=doc_file,
+            title=doc_title or doc_file.name,
+            uploaded_by=request.user
+        )
+        messages.success(request, f"Document uploaded successfully to Case #{case.id}.")
+        return redirect('lawyer_documents')
+        
+    return redirect('lawyer_dashboard')
+
+@login_required(login_url='/lawyer/lawyer-login/')
+@approved_lawyer_required
+def lawyer_upload_document(request):
+    """
+    Global document upload from dashboard or documents page.
+    """
+    if request.method == "POST":
+        case_id = request.POST.get('case_id')
+        doc_file = request.FILES.get('document')
+        doc_title = request.POST.get('title')
+        
+        if not case_id or not doc_file:
+            messages.error(request, "Please select a case and a file.")
+            return redirect(request.META.get('HTTP_REFERER', 'lawyer_dashboard'))
+            
+        from clients.models import Case, CaseDocument, Interaction
+        case = get_object_or_404(Case, pk=case_id)
+        
+        # Verify access
+        get_object_or_404(Interaction, case=case, lawyer__user=request.user)
+        
+        CaseDocument.objects.create(
+            case=case,
+            file=doc_file,
+            title=doc_title or doc_file.name,
+            uploaded_by=request.user
+        )
+        messages.success(request, f"Document uploaded successfully to Case #{case.id}.")
+        return redirect('lawyer_documents')
+        
+    return redirect('lawyer_dashboard')
+
+@login_required(login_url='/lawyer/lawyer-login/')
+@approved_lawyer_required
+def cancel_appointment(request, appointment_id):
+    from clients.models import Appointment
+    appointment = get_object_or_404(Appointment, pk=appointment_id, organizer=request.user)
+    
+    if request.method == "POST":
+        appointment.status = 'cancelled'
+        appointment.save()
+        messages.success(request, "Appointment has been cancelled.")
+    
+    from django.urls import reverse
+    return redirect(reverse('lawyer_case_detail', kwargs={'case_id': appointment.case.id}) + '?tab=appointments')
+
+@login_required(login_url='/lawyer/lawyer-login/')
+@approved_lawyer_required
+def edit_appointment(request, appointment_id):
+    from clients.models import Appointment
+    appointment = get_object_or_404(Appointment, pk=appointment_id, organizer=request.user)
+    
+    if request.method == "POST":
+        date_str = request.POST.get('date')
+        time_str = request.POST.get('time')
+        
+        # Combine date and time
+        full_datetime_str = f"{date_str} {time_str}"
+        import datetime
+        dt_obj = datetime.datetime.strptime(full_datetime_str, "%Y-%m-%d %H:%M")
+        from django.utils import timezone
+        dt_aware = timezone.make_aware(dt_obj)
+        
+        appointment.title = request.POST.get('title')
+        appointment.datetime = dt_aware
+        appointment.duration_minutes = request.POST.get('duration')
+        appointment.location = request.POST.get('location')
+        appointment.notes = request.POST.get('notes')
+        appointment.save()
+        
+        messages.success(request, "Appointment successfully updated.")
+        
+    from django.urls import reverse
+    return redirect(reverse('lawyer_case_detail', kwargs={'case_id': appointment.case.id}) + '?tab=appointments')

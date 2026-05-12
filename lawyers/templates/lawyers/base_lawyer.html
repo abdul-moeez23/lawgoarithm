@@ -175,12 +175,150 @@
             background: linear-gradient(135deg, var(--navy), var(--navy-2));
             display: flex; align-items: center; justify-content: center;
             color: var(--gold); font-size: 1.1rem; cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .topbar-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(26,43,74,0.2);
         }
         .hamburger-btn {
             display: none;
             background: none; border: none;
             font-size: 1.25rem; color: var(--navy); cursor: pointer;
         }
+
+        /* ── PROFILE DROPDOWN ── */
+        .profile-dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 0.5rem 0;
+            min-width: 240px;
+            margin-top: 12px !important;
+            border: 1px solid #edf2f7;
+            transform: translateX(-10px);
+        }
+        .profile-dropdown-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f1f4f8;
+            margin-bottom: 0.5rem;
+        }
+        .profile-dropdown-header .name {
+            display: block;
+            font-weight: 700;
+            color: var(--navy);
+            font-size: 0.95rem;
+            line-height: 1.2;
+        }
+        .profile-dropdown-header .email {
+            display: block;
+            color: #718096;
+            font-size: 0.8rem;
+            margin-top: 4px;
+            word-break: break-all;
+        }
+        .profile-dropdown-item {
+            padding: 0.7rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .profile-dropdown-item:hover {
+            background-color: #f8fafc;
+            color: var(--navy);
+            padding-left: 1.5rem;
+        }
+        .profile-dropdown-item i {
+            width: 18px;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 0.95rem;
+        }
+        .profile-dropdown-item.logout {
+            color: #dc3545;
+            border-top: 1px solid #f1f4f8;
+            margin-top: 0.5rem;
+            padding-top: 0.8rem;
+        }
+        .profile-dropdown-item.logout i {
+            color: #dc3545;
+        }
+
+        /* ── NOTIFICATIONS ── */
+        .notification-bell {
+            position: relative;
+            font-size: 1.2rem;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 38px; height: 38px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            background: #f8fafc;
+        }
+        .notification-bell:hover {
+            background: #edf2f7;
+            color: var(--navy);
+        }
+        .notification-badge {
+            position: absolute;
+            top: 6px; right: 6px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            min-width: 16px; height: 16px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0 4px;
+            border: 2px solid #fff;
+        }
+        .notification-dropdown {
+            width: 320px;
+            padding: 0;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            border-radius: 14px;
+            margin-top: 12px !important;
+            border: 1px solid #edf2f7;
+        }
+        .notification-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f1f4f8;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .notification-header h6 { margin: 0; font-weight: 700; color: var(--navy); font-size: 0.95rem; }
+        .notification-header .mark-all { font-size: 0.75rem; color: var(--gold); text-decoration: none; font-weight: 600; cursor: pointer; }
+        .notification-header .mark-all:hover { color: var(--gold-2); }
+        
+        .notification-list { max-height: 350px; overflow-y: auto; }
+        .notification-item {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f8fafc;
+            display: flex; gap: 0.85rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .notification-item:hover { background: #f8fafc; }
+        .notification-item.unread { background: rgba(201,169,97,0.04); border-left: 3px solid var(--gold); }
+        .notification-item .icon {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: rgba(26,43,74,0.06);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--navy); flex-shrink: 0; font-size: 0.9rem;
+        }
+        .notification-item .content { flex: 1; }
+        .notification-item .title { display: block; font-weight: 700; font-size: 0.85rem; color: var(--navy); line-height: 1.3; }
+        .notification-item .desc { display: block; font-size: 0.78rem; color: #718096; margin-top: 2px; line-height: 1.4; }
+        .notification-item .time { display: block; font-size: 0.7rem; color: #a0aec0; margin-top: 6px; }
+        .notification-footer { padding: 0.8rem; text-align: center; border-top: 1px solid #f1f4f8; }
+        .notification-footer a { font-size: 0.8rem; color: var(--navy); font-weight: 600; text-decoration: none; }
 
         /* ── PAGE CONTENT ── */
         .page-content {
@@ -243,6 +381,39 @@
             .page-content { padding: 1.25rem; }
             .topbar { padding: 0.9rem 1.25rem; }
         }
+        /* --- Professional Modal Overlay --- */
+        .msg-modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px);
+            z-index: 99999; align-items: center; justify-content: center;
+        }
+        .msg-modal-overlay.show { display: flex; }
+        .msg-modal-box {
+            background: #fff; border-radius: 20px; padding: 2.25rem 2rem;
+            width: 90%; max-width: 380px; text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+            animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.88); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        .msg-modal-icon {
+            width: 60px; height: 60px; border-radius: 50%; background: #fee2e2;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem; font-size: 1.4rem; color: #ef4444;
+        }
+        .msg-modal-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+        .msg-modal-body  { font-size: 0.875rem; color: #64748b; margin-bottom: 1.75rem; line-height: 1.5; }
+        .msg-modal-actions { display: flex; gap: 0.75rem; }
+        .msg-modal-cancel, .msg-modal-confirm {
+            flex: 1; padding: 0.7rem 1rem; border-radius: 10px; border: none;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .msg-modal-cancel { background: #f1f5f9; color: #475569; }
+        .msg-modal-cancel:hover { background: #e2e8f0; }
+        .msg-modal-confirm { background: linear-gradient(135deg,#ef4444,#dc2626); color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.35); }
+        .msg-modal-confirm:hover { background: linear-gradient(135deg,#dc2626,#b91c1c); transform: translateY(-1px); }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -266,8 +437,13 @@
         <a href="{% url 'lawyer_my_cases' %}" class="nav-link-item {% if request.resolver_match.url_name == 'lawyer_my_cases' %}active{% endif %}">
             <i class="fas fa-briefcase"></i> My Cases
         </a>
-        <a href="{% url 'lawyer_messages' %}" class="nav-link-item {% if request.resolver_match.url_name == 'lawyer_messages' %}active{% endif %}">
-            <i class="fas fa-comments"></i> Messages
+        <a href="{% url 'lawyer_messages' %}" class="nav-link-item {% if request.resolver_match.url_name == 'lawyer_messages' %}active{% endif %} d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-comments"></i> Messages
+            </div>
+            {% if unread_messages_count > 0 %}
+            <span class="badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.35em 0.65em;">{{ unread_messages_count }}</span>
+            {% endif %}
         </a>
         <a href="{% url 'lawyer_appointments' %}" class="nav-link-item {% if request.resolver_match.url_name == 'lawyer_appointments' %}active{% endif %}">
             <i class="fas fa-calendar-check"></i> Appointments
@@ -283,14 +459,11 @@
         <a href="{% url 'edit_lawyer_profile' %}" class="nav-link-item {% if request.resolver_match.url_name == 'edit_lawyer_profile' %}active{% endif %}">
             <i class="fas fa-user-edit"></i> Edit Profile
         </a>
-        <a href="{% url 'lawyer_change_password' %}" class="nav-link-item {% if request.resolver_match.url_name == 'lawyer_change_password' %}active{% endif %}">
-            <i class="fas fa-lock"></i> Change Password
+        <a href="{% if user.has_usable_password %}{% url 'account_change_password' %}{% else %}{% url 'account_set_password' %}{% endif %}" class="nav-link-item {% if request.resolver_match.url_name == 'account_change_password' or request.resolver_match.url_name == 'account_set_password' %}active{% endif %}">
+            <i class="fas fa-shield-halved"></i> {% if user.has_usable_password %}Security{% else %}Set Password{% endif %}
         </a>
 
-        <span class="nav-section-label">Session</span>
-        <a href="{% url 'lawyer_logout' %}" class="nav-link-item" style="color:rgba(252,165,165,0.8);">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+
     </nav>
 
     <div class="sidebar-footer">
@@ -318,8 +491,73 @@
             <span class="topbar-title">{% block page_title %}Lawyer Portal{% endblock %}</span>
         </div>
         <div class="topbar-right">
-            <div class="topbar-avatar" title="{{ request.user.email }}">
-                <i class="fas fa-user-tie"></i>
+            <!-- Notifications -->
+            <div class="dropdown">
+                <div class="notification-bell" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bell"></i>
+                    {% if unread_notification_count > 0 %}
+                    <span class="notification-badge">{{ unread_notification_count }}</span>
+                    {% endif %}
+                </div>
+                <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notifDropdown">
+                    <div class="notification-header">
+                        <h6>Notifications</h6>
+                        {% if unread_notification_count > 0 %}
+                        <span class="mark-all" onclick="markAllNotificationsAsRead(event)">Mark all as read</span>
+                        {% endif %}
+                    </div>
+                    <div class="notification-list">
+                        {% for notif in latest_notifications %}
+                        <a href="{{ notif.link|default:'#' }}" class="notification-item {% if not notif.is_read %}unread{% endif %}" onclick="markNotificationAsRead(event, '{{ notif.id }}', '{{ notif.link }}')">
+                            <div class="icon">
+                                <i class="fas {% if 'message' in notif.title|lower %}fa-envelope{% elif 'fee' in notif.title|lower %}fa-money-bill-wave{% elif 'hired' in notif.title|lower %}fa-handshake{% elif 'case' in notif.title|lower %}fa-briefcase{% else %}fa-info-circle{% endif %}"></i>
+                            </div>
+                            <div class="content">
+                                <span class="title">{{ notif.title }}</span>
+                                <span class="desc">{{ notif.message|truncatechars:60 }}</span>
+                                <span class="time">{{ notif.created_at|timesince }} ago</span>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="p-4 text-center">
+                            <i class="fas fa-bell-slash text-muted mb-2" style="font-size: 1.5rem;"></i>
+                            <p class="text-muted small mb-0">No notifications yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if latest_notifications %}
+                    <div class="notification-footer">
+                        <a href="{% url 'all_notifications' %}">View All Notifications</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="dropdown">
+                <div class="topbar-avatar" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="dropdown-menu dropdown-menu-end profile-dropdown-menu" aria-labelledby="profileDropdown">
+                    <div class="profile-dropdown-header">
+                        <span class="name">{{ request.user.get_full_name|default:"Lawyer Account" }}</span>
+                        <span class="email">{{ request.user.email }}</span>
+                    </div>
+                    
+                    <a class="profile-dropdown-item" href="{% url 'lawyer_profile' %}">
+                        <i class="fas fa-user-circle"></i> View Profile
+                    </a>
+                    <a class="profile-dropdown-item" href="{% url 'edit_lawyer_profile' %}">
+                        <i class="fas fa-user-edit"></i> Edit Account
+                    </a>
+                    <a class="profile-dropdown-item" href="{% url 'lawyer_change_password' %}">
+                        <i class="fas fa-shield-alt"></i> Security
+                    </a>
+                    
+                    <a class="profile-dropdown-item logout" href="{% url 'lawyer_logout' %}">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -342,6 +580,19 @@
         {% block content %}{% endblock %}
     </main>
 </div>
+    
+    <!-- Professional Confirmation Modal (System-wide) -->
+    <div id="msgDeleteModal" class="msg-modal-overlay">
+        <div class="msg-modal-box">
+            <div class="msg-modal-icon"><i class="fas fa-trash-alt"></i></div>
+            <h5 class="msg-modal-title" id="deleteModalTitle">Confirm Action</h5>
+            <p class="msg-modal-body" id="deleteModalBody">Are you sure you want to proceed? This action cannot be undone.</p>
+            <div class="msg-modal-actions">
+                <button class="msg-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="msg-modal-confirm" id="deleteModalConfirm">Proceed</button>
+            </div>
+        </div>
+    </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -362,6 +613,191 @@
             setTimeout(() => el.remove(), 500);
         }, 5000);
     });
+
+    // Notification Handlers
+    function markNotificationAsRead(event, id, link) {
+        if (event) {
+            event.preventDefault();
+        }
+        
+        fetch(`/users/notifications/mark-read/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        }).then(response => {
+            if (response.ok) {
+                if (link && link !== '#') {
+                    window.location.href = link;
+                } else {
+                    location.reload(); // Simple way to update UI
+                }
+            }
+        });
+    }
+
+    function markAllNotificationsAsRead(event) {
+        if (event) event.stopPropagation();
+        
+        fetch(`/users/notifications/mark-all-read/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    }
+
+    // Professional Modal Helper Functions
+    function showDeleteModal(title, body, confirmCallback, infoOnly = false) {
+        document.getElementById('deleteModalTitle').textContent = title;
+        document.getElementById('deleteModalBody').textContent = body;
+        const confirmBtn = document.getElementById('deleteModalConfirm');
+        
+        if (infoOnly) {
+            confirmBtn.style.display = 'none';
+        } else {
+            confirmBtn.style.display = '';
+            confirmBtn.onclick = function() {
+                closeDeleteModal();
+                if (typeof confirmCallback === 'function') confirmCallback();
+            };
+        }
+        document.getElementById('msgDeleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('msgDeleteModal').classList.remove('show');
+    }
+
+    // Close modal on outside click
+    document.getElementById('msgDeleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+</script>
+
+<!-- Real-time Notifications & Toasts -->
+<div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container" style="z-index: 9999;"></div>
+
+<script>
+    function showToast(title, message, iconClass = 'fa-bell', link = null) {
+        const container = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-dark border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="opacity: 0; transition: all 0.3s ease; transform: translateX(20px);">
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-start gap-3">
+                        <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div>
+                            <strong class="d-block mb-1">${title}</strong>
+                            <p class="mb-0 small text-white-50">${message}</p>
+                            ${link ? `<a href="${link}" class="btn btn-sm btn-link text-warning p-0 mt-2 text-decoration-none fw-bold">View Now <i class="fas fa-arrow-right ms-1"></i></a>` : ''}
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', toastHtml);
+        const toastEl = document.getElementById(toastId);
+        
+        // Trigger animation
+        setTimeout(() => {
+            toastEl.style.opacity = '1';
+            toastEl.style.transform = 'translateX(0)';
+        }, 100);
+
+        // Auto remove
+        setTimeout(() => {
+            toastEl.style.opacity = '0';
+            toastEl.style.transform = 'translateX(20px)';
+            setTimeout(() => toastEl.remove(), 300);
+        }, 6000);
+    }
+
+    // WebSocket for Real-time Updates
+    function connectNotifications() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/interaction-status/`;
+        const socket = new WebSocket(wsUrl);
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Handle Chat Messages
+            if (data.type === 'chat_message') {
+                if (String(data.sender_id) !== "{{ request.user.id }}") {
+                    showToast(`New Message from ${data.sender_name}`, data.message, 'fa-comments', `/lawyer/case/${data.case_id}/?tab=messages`);
+                    
+                    // Update Sidebar Badge
+                    const sidebarBadge = document.querySelector('a[href*="lawyer_messages"] .badge');
+                    if (sidebarBadge) {
+                        let currentCount = parseInt(sidebarBadge.innerText) || 0;
+                        sidebarBadge.innerText = currentCount + 1;
+                        sidebarBadge.style.display = 'inline-block';
+                    } else {
+                        const messagesLink = document.querySelector('a[href*="lawyer_messages"]');
+                        if (messagesLink) {
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'badge rounded-pill bg-danger';
+                            newBadge.style.cssText = 'font-size: 0.7rem; padding: 0.35em 0.65em;';
+                            newBadge.innerText = '1';
+                            messagesLink.appendChild(newBadge);
+                        }
+                    }
+                    
+                    // Update unread count on Messages List page if user is there
+                    const pageBadge = document.getElementById(`unread-${data.case_id}`);
+                    if (pageBadge) {
+                        pageBadge.style.display = 'inline-block';
+                        let count = parseInt(pageBadge.innerText) || 0;
+                        pageBadge.innerText = count + 1;
+                    }
+                }
+            } 
+            // Handle Connection Requests
+            else if (data.type === 'new_connection_request') {
+                showToast("New Connection Request!", `${data.data.client_name} sent a request for: ${data.data.case_title}`, 'fa-user-plus', '/lawyer/lawyer-dashboard/');
+                
+                // Update Bell Badge
+                const bellBadge = document.querySelector('.notification-badge');
+                if (bellBadge) {
+                    let count = parseInt(bellBadge.innerText) || 0;
+                    bellBadge.innerText = count + 1;
+                } else {
+                    const bell = document.querySelector('.notification-bell');
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'notification-badge';
+                    newBadge.innerText = '1';
+                    bell.appendChild(newBadge);
+                }
+                
+                // If on dashboard, update the UI live
+                if (window.handleDashboardMessage) {
+                    window.handleDashboardMessage(data);
+                }
+            }
+            // Handle Case Hired
+            else if (data.type === 'case_hired_notification') {
+                showToast("Congratulations!", data.message, 'fa-trophy', `/lawyer/case/${data.case_id}/`);
+            }
+        };
+
+        socket.onclose = function() {
+            setTimeout(connectNotifications, 3000); // Reconnect
+        };
+    }
+
+    if ("{{ user.is_authenticated }}" === "True") {
+        connectNotifications();
+    }
 </script>
 {% block extra_js %}{% endblock %}
 </body>

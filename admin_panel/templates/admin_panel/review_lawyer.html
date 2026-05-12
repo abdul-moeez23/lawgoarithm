@@ -1,0 +1,289 @@
+{% extends "base_admin.html" %}
+{% load static %}
+
+{% block title %}Review Application - {{ lawyer.user.get_full_name }}{% endblock %}
+
+{% block page_title %}Review Application{% endblock %}
+
+{% block extra_css %}
+<style>
+    .review-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .detail-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
+    }
+
+    .section-title {
+        color: var(--primary-navy);
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--bg-light);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-light);
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: var(--text-dark);
+        font-size: 1rem;
+    }
+
+    .document-card {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-light);
+    }
+
+    .document-card:hover {
+        border-color: var(--primary-blue);
+        background: white;
+        transform: translateY(-2px);
+    }
+
+    .doc-icon {
+        width: 40px;
+        height: 40px;
+        background: #fee2e2;
+        color: #ef4444;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+
+    .action-panel {
+        grid-column: span 2;
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--shadow-lg);
+        border-top: 4px solid var(--primary-blue);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        bottom: 2rem;
+        z-index: 100;
+    }
+
+    @media (max-width: 992px) {
+        .review-container {
+            grid-template-columns: 1fr;
+        }
+        .action-panel {
+            grid-column: span 1;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+    }
+
+    /* Modal Styling for Rejection */
+    #rejectModal {
+        display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;
+    }
+    .modal-box {
+        background:white; border-radius:16px; padding:2rem; max-width:450px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2); margin:auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'pending_lawyer_requests' %}" class="btn btn-light btn-sm">
+        <i class="fas fa-arrow-left"></i> Back to Requests
+    </a>
+</div>
+
+<div class="review-container">
+    <!-- Left: Lawyer Profile Details -->
+    <div class="detail-section">
+        <h4 class="section-title">
+            <i class="fas fa-user-tie"></i> Profile Information
+        </h4>
+        
+        <div style="display: flex; gap: 1.5rem; align-items: center; margin-bottom: 2rem;">
+            {% if lawyer.profile_picture %}
+                <img src="{{ lawyer.profile_picture.url }}" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg-light);">
+            {% else %}
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-light); color: var(--primary-blue); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                    <i class="fas fa-user"></i>
+                </div>
+            {% endif %}
+            <div>
+                <h3 style="margin: 0; color: var(--primary-navy);">{{ lawyer.user.get_full_name }}</h3>
+                <p style="margin: 0; color: var(--text-gray);">{{ lawyer.user.email }}</p>
+                <span class="badge bg-primary-subtle text-primary-custom mt-1">Pending Verification</span>
+            </div>
+        </div>
+
+        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="info-group">
+                <span class="info-label">Full Name</span>
+                <span class="info-value">{{ lawyer.user.get_full_name|default:"Not Provided" }}</span>
+            </div>
+            <div class="info-group">
+                <span class="info-label">Email Address</span>
+                <span class="info-value">{{ lawyer.user.email }}</span>
+            </div>
+            <div class="info-group">
+                <span class="info-label">Phone Number</span>
+                <span class="info-value">{{ lawyer.user.phone|default:"Not Provided" }}</span>
+            </div>
+            <div class="info-group">
+                <span class="info-label">City</span>
+                <span class="info-value">{{ lawyer.city.name|default:"Not Provided" }}</span>
+            </div>
+            <div class="info-group">
+                <span class="info-label">Bar Enrollment Number</span>
+                <span class="info-value">{{ lawyer.bar_enrollment }}</span>
+            </div>
+            <div class="info-group">
+                <span class="info-label">Years of Experience</span>
+                <span class="info-value">{{ lawyer.experience_years }} Years</span>
+            </div>
+        </div>
+
+        <div class="info-group" style="margin-top: 1rem;">
+            <span class="info-label">Practice Areas</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem;">
+                {% for area in lawyer.practice_areas.all %}
+                    <span class="badge bg-light text-dark border">{{ area.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="info-group">
+            <span class="info-label">Courts</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem;">
+                {% for court in lawyer.courts.all %}
+                    <span class="badge bg-light text-dark border">{{ court.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Verification Documents -->
+    <div class="detail-section">
+        <h4 class="section-title">
+            <i class="fas fa-file-contract"></i> Verification Documents
+        </h4>
+        
+        <p class="text-muted small mb-4">Please carefully verify these documents against the profile details on the left.</p>
+
+        {% if lawyer.verificationdocument_set.exists %}
+            {% for doc in lawyer.verificationdocument_set.all %}
+            <div class="document-card">
+                <div style="display: flex; align-items: center;">
+                    <div class="doc-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <h6 style="margin: 0; font-weight: 600;">Verification Doc #{{ forloop.counter }}</h6>
+                        <span class="text-muted small">Uploaded: {{ doc.uploaded_at|date:"d M Y" }}</span>
+                    </div>
+                </div>
+                <a href="{{ doc.file.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-external-link-alt"></i> View File
+                </a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-3x text-muted opacity-25 mb-3"></i>
+                <p class="text-muted">No documents uploaded for verification.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Action Panel (Sticky Footer) -->
+    <div class="action-panel">
+        <div>
+            <h5 style="margin: 0; color: var(--primary-navy);">Action Required</h5>
+            <p class="text-muted small" style="margin: 0;">Carefully review the credentials before making a decision.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <!-- Reject Button (Simple Form) -->
+            <form action="{% url 'reject_lawyer' lawyer.id %}" method="POST" onsubmit="return confirm('Are you sure you want to PERMANENTLY reject this lawyer? They will not be able to re-submit.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-ban"></i> Reject
+                </button>
+            </form>
+
+            <!-- Request Changes Button (Opens Modal) -->
+            <button type="button" onclick="openRequestModal()" class="btn btn-outline-warning">
+                <i class="fas fa-exclamation-triangle"></i> Request Changes
+            </button>
+
+            <!-- Approve Button -->
+            <a href="{% url 'approve_lawyer' lawyer.id %}" class="btn btn-primary-custom" style="padding: 0.75rem 2rem;">
+                <i class="fas fa-check"></i> Approve Lawyer
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Request Changes Modal -->
+<div id="requestModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div class="modal-box">
+        <h4 style="margin-bottom: 1rem; color: var(--primary-navy);">Request Profile Changes</h4>
+        <p class="text-muted small mb-3">Tell the lawyer exactly what they need to fix. They will receive this via email.</p>
+        <form action="{% url 'request_changes_lawyer' lawyer.id %}" method="POST">
+            {% csrf_token %}
+            <div style="margin-bottom: 1.5rem;">
+                <textarea name="rejection_reason" class="form-control" rows="4" placeholder="e.g. Your Bar Council Certificate is blurry, please re-upload a clear copy." required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" onclick="closeRequestModal()" class="btn btn-light">Cancel</button>
+                <button type="submit" class="btn btn-warning" style="color: #1a2b4a; font-weight: 700;">Send Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRequestModal() {
+        document.getElementById('requestModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeRequestModal() {
+        document.getElementById('requestModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    // Close on backdrop click
+    document.getElementById('requestModal').addEventListener('click', function(e) {
+        if (e.target === this) closeRequestModal();
+    });
+</script>
+{% endblock %}

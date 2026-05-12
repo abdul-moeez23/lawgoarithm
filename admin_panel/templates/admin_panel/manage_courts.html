@@ -17,7 +17,7 @@
         <input type="hidden" name="action" value="add">
         <div style="flex:1;">
             <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Court Name</label>
-            <input type="text" name="name" class="form-control" placeholder="e.g., Supreme Court of Pakistan" required>
+            <input type="text" name="name" class="form-control" placeholder="e.g., Supreme Court of Pakistan" pattern="[A-Za-z\s]+" title="Only letters and spaces allowed" minlength="2" required>
         </div>
         <button type="submit" class="btn btn-primary">
             <i class="fas fa-plus"></i> Add Court
@@ -47,21 +47,16 @@
                         <input type="hidden" name="action" value="edit">
                         <input type="hidden" name="court_id" value="{{ court.id }}">
                         <input type="text" name="name" value="{{ court.name }}"
-                            style="border:1px solid #e5e7eb; padding:0.5rem; border-radius:6px; width:400px;">
+                            style="border:1px solid #e5e7eb; padding:0.5rem; border-radius:6px; width:400px;" pattern="[A-Za-z\s]+" title="Only letters and spaces allowed" minlength="2" required>
                         <button type="submit" class="btn btn-sm btn-success">
                             <i class="fas fa-save"></i> Save
                         </button>
                     </form>
                 </td>
                 <td style="text-align:right;">
-                    <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this court?');">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="court_id" value="{{ court.id }}">
-                        <button type="submit" class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteModal('{{ court.id }}', '{{ court.name|escapejs }}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
                 </td>
             </tr>
             {% empty %}
@@ -75,4 +70,48 @@
     </table>
 </div>
 
-{% endblock %}
+<!-- Delete Court Confirmation Modal (Custom CSS - No Bootstrap JS needed) -->
+<div id="deleteCourtModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:16px; padding:2rem; max-width:380px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2); text-align:center; margin:auto;">
+        <div style="margin-bottom:1rem;">
+            <div style="display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:#fee2e2; color:#ef4444; width:60px; height:60px;">
+                <i class="fas fa-exclamation-triangle fa-lg"></i>
+            </div>
+        </div>
+        <h5 style="font-weight:700; margin-bottom:0.5rem; color:#111827; font-size:1.1rem;">Delete Court?</h5>
+        <p style="color:#6b7280; font-size:0.875rem; margin-bottom:1.5rem;">
+            Are you sure you want to delete <strong id="deleteCourtName" style="color:#111827;"></strong>? This action cannot be undone.
+        </p>
+        <form id="deleteCourtForm" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="court_id" id="deleteCourtId" value="">
+            <div style="display:flex; gap:0.75rem; justify-content:center;">
+                <button type="button" onclick="closeDeleteModal()" style="padding:0.5rem 1.25rem; border-radius:8px; border:1px solid #e5e7eb; background:white; color:#374151; font-weight:500; cursor:pointer; font-size:0.875rem;">Cancel</button>
+                <button type="submit" style="padding:0.5rem 1.25rem; border-radius:8px; border:none; background:#ef4444; color:white; font-weight:500; cursor:pointer; font-size:0.875rem;">Yes, Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openDeleteModal(courtId, courtName) {
+        document.getElementById('deleteCourtId').value = courtId;
+        document.getElementById('deleteCourtName').textContent = courtName;
+        const modal = document.getElementById('deleteCourtModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteCourtModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // Close on backdrop click
+    document.getElementById('deleteCourtModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+</script>
+
+{% endblock %}

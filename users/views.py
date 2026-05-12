@@ -83,3 +83,46 @@ def role_dispatch(request):
         return redirect('/myadmin/')
     
     return redirect('index')
+
+from django.http import JsonResponse
+from .models import Notification
+
+@login_required
+def mark_notification_read(request, notification_id):
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'status': 'success'})
+    except Notification.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Notification not found'}, status=404)
+
+@login_required
+def mark_all_notifications_read(request):
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'status': 'success'})
+
+@login_required
+def all_notifications(request):
+    """
+    Display a full list of user notifications with pagination.
+    """
+    notifications_list = Notification.objects.filter(recipient=request.user).exclude(title__istartswith="New Message").order_by('-created_at')
+    
+    # Simple manual pagination or use Django Paginator
+    from django.core.paginator import Paginator
+    paginator = Paginator(notifications_list, 20) # 20 per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Determine base template based on user role
+    base_template = 'lawyers/base_lawyer.html'
+    if request.user.role == 'client':
+        base_template = 'clients/dashboard_base.html'
+    elif request.user.role == 'admin':
+        base_template = 'admin/base_admin.html' # Assuming this exists
+
+    return render(request, 'users/notifications.html', {
+        'page_obj': page_obj,
+        'base_template': base_template
+    })

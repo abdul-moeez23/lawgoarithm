@@ -64,6 +64,10 @@ class MatchingServiceTests(TestCase):
         MatchingService._gemini_model = None
 
     def _create_lawyer(self, username, email, city, experience_years, practice_areas, courts):
+        from datetime import date
+        enrollment_year = date.today().year - experience_years
+        enrollment_date = date(enrollment_year, 1, 1)
+
         user = User.objects.create_user(
             username=username,
             email=email,
@@ -74,7 +78,7 @@ class MatchingServiceTests(TestCase):
             user=user,
             bar_enrollment=f"{username}-bar",
             city=city,
-            experience_years=experience_years,
+            enrollment_date=enrollment_date,
             verification_status="approved",
         )
         if practice_areas:

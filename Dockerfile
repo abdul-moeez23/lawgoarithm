@@ -15,6 +15,11 @@ RUN apt-get update && apt-get install -y \
     gcc \
     python3-dev \
     musl-dev \
+    wget \
+    curl \
+    git \
+    ca-certificates \
+    procps \
     && apt-get clean
 
 # Copy requirements file

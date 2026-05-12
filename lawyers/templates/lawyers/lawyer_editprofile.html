@@ -8,6 +8,38 @@
     <div class="col-12">
         <h2 class="mb-2">Edit Your Profile</h2>
         <p class="text-muted mb-4">Update your information below. Admin may re-verify changes if needed.</p>
+
+        {% if lawyer.verification_status == 'incomplete' %}
+        <div class="alert alert-warning shadow-sm border-0 rounded-4 p-4 mb-4" style="background: #fffbef; border-left: 5px solid #ecc94b !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div style="background: #fff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #d69e2e; box-shadow: 0 4px 12px rgba(214, 158, 46, 0.1);">
+                    <i class="fas fa-edit fa-lg"></i>
+                </div>
+                <div>
+                    <h5 style="margin: 0; color: #975a16; font-weight: 700;">Changes Requested</h5>
+                    <p style="margin: 0.25rem 0 0; color: #744210; font-size: 0.95rem;">
+                        Admin requested updates: <strong>{{ lawyer.rejection_reason }}</strong>
+                    </p>
+                </div>
+            </div>
+            <p class="mt-3 mb-0 small text-muted">Update your details and click save to re-submit for approval.</p>
+        </div>
+        {% elif lawyer.verification_status == 'rejected' %}
+        <div class="alert alert-danger shadow-sm border-0 rounded-4 p-4 mb-4" style="background: #fff5f5; border-left: 5px solid #fc8181 !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div style="background: #fff; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #e53e3e; box-shadow: 0 4px 12px rgba(229, 62, 62, 0.1);">
+                    <i class="fas fa-ban fa-lg"></i>
+                </div>
+                <div>
+                    <h5 style="margin: 0; color: #c53030; font-weight: 700;">Account Rejected</h5>
+                    <p style="margin: 0.25rem 0 0; color: #742a2a; font-size: 0.95rem;">
+                        Reason: <strong>{{ lawyer.rejection_reason|default:"No reason provided" }}</strong>
+                    </p>
+                </div>
+            </div>
+            <p class="mt-3 mb-0 small text-muted">Your application has been rejected by the admin.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -47,7 +79,7 @@
                 <label class="form-label">
                     <i class="fas fa-user text-muted me-2"></i>Full Name
                 </label>
-                <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" required>
+                <input type="text" class="form-control" name="first_name" id="first_name" value="{{ user.first_name }}" required pattern="[a-zA-Z\s]+" title="Only letters and spaces are allowed">
             </div>
 
             <div class="col-md-6 mb-3">
@@ -88,9 +120,16 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">
+                    <i class="fas fa-calendar-alt text-muted me-2"></i>Enrollment Date
+                </label>
+                <input type="date" class="form-control" name="enrollment_date" id="enrollment_date" value="{{ lawyer.enrollment_date|date:'Y-m-d' }}" required onchange="calculateExperience()">
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">
                     <i class="fas fa-user-clock text-muted me-2"></i>Experience (Years)
                 </label>
-                <input type="number" class="form-control" name="experience" value="{{ lawyer.experience_years }}" required>
+                <input type="text" class="form-control" id="experience_display" value="{{ lawyer.experience_years }} Years" readonly style="background-color: #e9ecef; cursor: not-allowed;">
             </div>
 
             <!-- Fee Band removed -->
@@ -191,6 +230,51 @@
         </div>
     </div>
 
+    <!-- Security Section -->
+    <div class="card-box shadow-sm border-0 rounded-4" style="background: #fff; margin-bottom: 2rem; overflow: hidden; padding: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: rgba(26, 43, 74, 0.05); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #1a2b4a;">
+                <i class="fas fa-shield-alt fa-lg"></i>
+            </div>
+            <div>
+                <h5 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #1a2b4a; font-family: 'Poppins', sans-serif;">Security & Password</h5>
+                <p style="margin: 0; font-size: 0.8rem; color: #718096;">Manage your account access and credentials</p>
+            </div>
+        </div>
+        
+        <div style="background: #f8fafc; border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 250px;">
+                <p style="margin: 0; font-weight: 600; color: #2d3748; font-size: 0.95rem;">Password Management</p>
+                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: #718096; line-height: 1.5;">
+                    {% if user.has_usable_password %}
+                        Regularly update your password to keep your account secure.
+                    {% else %}
+                        You currently log in via Google. Set a password to enable manual email/password login.
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                {% if user.has_usable_password %}
+                    <a href="{% url 'account_change_password' %}" class="btn-lawyer-security" style="background: #fff; color: #1a2b4a; border: 1px solid #e2e8f0; text-decoration: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                        <i class="fas fa-key small"></i> Change Password
+                    </a>
+                {% else %}
+                    <a href="{% url 'account_set_password' %}" class="btn-lawyer-security" style="background: #1a2b4a; color: #fff; text-decoration: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                        <i class="fas fa-plus-circle small"></i> Set Password
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .btn-lawyer-security:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            color: inherit;
+        }
+    </style>
+
     <div class="text-center">
         <button type="submit" class="btn btn-primary-custom btn-lg px-5">
             <i class="fas fa-save me-2"></i>Update Profile
@@ -198,9 +282,37 @@
     </div>
 </form>
 <script>
+function calculateExperience() {
+    let enrollmentDate = document.getElementById("enrollment_date").value;
+    if (enrollmentDate) {
+        let enrollmentYear = new Date(enrollmentDate).getFullYear();
+        let currentYear = new Date().getFullYear();
+        let experience = currentYear - enrollmentYear;
+        if (experience < 0) experience = 0;
+        document.getElementById("experience_display").value = experience + " Years";
+    }
+}
+
 document.getElementById('phone').addEventListener('input', function (e) {
     // Remove all non-digits AND non-plus characters
     this.value = this.value.replace(/[^0-9+]/g, '');
+});
+
+document.getElementById('first_name').addEventListener('input', function (e) {
+    // Remove all non-letter characters
+    this.value = this.value.replace(/[^a-zA-Z\s]/g, '');
+});
+
+document.getElementById('first_name').addEventListener('blur', function() {
+    this.value = this.value.trim();
+});
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    const firstName = document.getElementById('first_name').value.trim();
+    if (firstName.length === 0) {
+        alert('Name cannot be empty.');
+        e.preventDefault();
+    }
 });
 </script>
 

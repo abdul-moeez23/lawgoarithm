@@ -39,7 +39,7 @@ def detect_embedding_affecting_changes(sender, instance, **kwargs):
     previous = sender.objects.filter(pk=instance.pk).only(
         "bar_enrollment",
         "city_id",
-        "experience_years",
+        "enrollment_date",
         "verification_status",
     ).first()
     if previous is None:
@@ -49,7 +49,7 @@ def detect_embedding_affecting_changes(sender, instance, **kwargs):
         [
             previous.bar_enrollment != instance.bar_enrollment,
             previous.city_id != instance.city_id,
-            previous.experience_years != instance.experience_years,
+            previous.enrollment_date != instance.enrollment_date,
             previous.verification_status != instance.verification_status,
         ]
     )

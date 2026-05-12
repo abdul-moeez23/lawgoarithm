@@ -14,7 +14,7 @@ class CaseForm(forms.ModelForm):
             'description'
         ]
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Breach of Contract Dispute'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Untitled Case'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'subcategory': forms.Select(attrs={'class': 'form-select'}),
             'court_level': forms.Select(attrs={'class': 'form-select'}),

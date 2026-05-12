@@ -16,10 +16,13 @@ urlpatterns = [
     path('case/<int:case_id>/', views.lawyer_case_detail, name='lawyer_case_detail'),
     path('case/<int:case_id>/send-message/', views.send_message, name='send_message'),
     path('case/<int:case_id>/schedule-appointment/', views.schedule_appointment, name='schedule_appointment'),
+    path('appointment/<int:appointment_id>/edit/', views.edit_appointment, name='edit_appointment'),
+    path('appointment/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
     path('case/<int:case_id>/update-progress/', views.update_case_progress, name='update_case_progress'),
     path('appointments/', views.lawyer_appointments, name='lawyer_appointments'),
     path('documents/', views.lawyer_documents, name='lawyer_documents'),
     path('document/<int:document_id>/delete/<str:mode>/', views.delete_document, name='delete_document'),
+    path('upload-document/', views.lawyer_upload_document, name='lawyer_upload_document'),
     path('logout/',views.lawyer_logout,name='lawyer_logout'),
 
 ]

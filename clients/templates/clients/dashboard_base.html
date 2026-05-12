@@ -405,9 +405,41 @@
             to { transform: translateX(100%); opacity: 0; }
         }
 
-        .msg-alert { color: inherit; }
-        .msg-alert-error { background: #fee2e2; }
         .msg-alert-success { background: #dcfce7; }
+
+        /* --- Professional Modal Overlay --- */
+        .msg-modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px);
+            z-index: 99999; align-items: center; justify-content: center;
+        }
+        .msg-modal-overlay.show { display: flex; }
+        .msg-modal-box {
+            background: #fff; border-radius: 20px; padding: 2.25rem 2rem;
+            width: 90%; max-width: 380px; text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+            animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.88); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        .msg-modal-icon {
+            width: 60px; height: 60px; border-radius: 50%; background: #fee2e2;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem; font-size: 1.4rem; color: #ef4444;
+        }
+        .msg-modal-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+        .msg-modal-body  { font-size: 0.875rem; color: #64748b; margin-bottom: 1.75rem; line-height: 1.5; }
+        .msg-modal-actions { display: flex; gap: 0.75rem; }
+        .msg-modal-cancel, .msg-modal-confirm {
+            flex: 1; padding: 0.7rem 1rem; border-radius: 10px; border: none;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .msg-modal-cancel { background: #f1f5f9; color: #475569; }
+        .msg-modal-cancel:hover { background: #e2e8f0; }
+        .msg-modal-confirm { background: linear-gradient(135deg,#ef4444,#dc2626); color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.35); }
+        .msg-modal-confirm:hover { background: linear-gradient(135deg,#dc2626,#b91c1c); transform: translateY(-1px); }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -431,6 +463,17 @@
                 <a href="{% url 'my_cases' %}" class="nav-link {% if request.resolver_match.url_name == 'my_cases' %}active{% endif %}">
                     <i class="fas fa-briefcase"></i>
                     <span>My Cases</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'client_messages' %}" class="nav-link {% if request.resolver_match.url_name == 'client_messages' %}active{% endif %} d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-comments"></i>
+                        <span>Messages</span>
+                    </div>
+                    {% if unread_messages_count > 0 %}
+                    <span class="badge rounded-pill" style="background: #ef4444; color: white; font-size: 0.7rem; padding: 0.25rem 0.6rem; margin-left: auto; border: 1px solid rgba(255,255,255,0.1);">{{ unread_messages_count }}</span>
+                    {% endif %}
                 </a>
             </li>
             <li class="nav-item">
@@ -483,28 +526,31 @@
                     <div class="notification-dropdown" id="notif-dropdown">
                         <div class="notif-header">
                             <h3>Notifications</h3>
-                            <button class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" id="mark-all-read">Mark all as read</button>
+                            {% if unread_notification_count > 0 %}
+                            <button class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="markAllNotificationsAsRead(event)">Mark all as read</button>
+                            {% endif %}
                         </div>
                         <div class="notif-list" id="notif-list-body">
-                            {% if latest_notifications %}
-                                {% for notif in latest_notifications %}
-                                <a href="{% if notif.link %}{{ notif.link }}{% else %}#{% endif %}" class="notif-item {% if not notif.is_read %}unread{% endif %}" data-id="{{ notif.id }}">
+                            {% for notif in latest_notifications %}
+                                <a href="{{ notif.link|default:'#' }}" class="notif-item {% if not notif.is_read %}unread{% endif %}" onclick="markNotificationAsRead(event, '{{ notif.id }}', '{{ notif.link }}')">
                                     <div class="notif-icon">
-                                        <i class="fas fa-info-circle"></i>
+                                        <i class="fas {% if 'message' in notif.title|lower %}fa-envelope{% elif 'fee' in notif.title|lower %}fa-money-bill-wave{% elif 'hired' in notif.title|lower %}fa-handshake{% elif 'case' in notif.title|lower %}fa-briefcase{% else %}fa-info-circle{% endif %}"></i>
                                     </div>
                                     <div class="notif-info">
                                         <h4>{{ notif.title }}</h4>
-                                        <p>{{ notif.message|truncatechars:100 }}</p>
+                                        <p>{{ notif.message|truncatechars:80 }}</p>
                                         <span class="notif-time">{{ notif.created_at|timesince }} ago</span>
                                     </div>
                                 </a>
-                                {% endfor %}
-                            {% else %}
+                            {% empty %}
                                 <div class="notif-empty">
                                     <i class="fas fa-bell-slash mb-2" style="font-size: 2rem; opacity: 0.2;"></i>
                                     <p>No notifications yet</p>
                                 </div>
-                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="notif-footer" style="padding: 1rem; text-align: center; border-top: 1px solid #f1f4f8;">
+                            <a href="{% url 'all_notifications' %}" style="font-size: 0.9rem; color: #364d59; font-weight: 600; text-decoration: none;">View All Notifications</a>
                         </div>
                     </div>
                 </div>
@@ -513,12 +559,14 @@
         </header>
 
         {% if messages %}
-            {% for message in messages %}
-                <div class="card msg-alert {% if 'error' in message.tags %}msg-alert-error{% else %}msg-alert-success{% endif %}" style="display: flex; justify-content: space-between; align-items: center; transition: opacity 0.5s ease, transform 0.5s ease;">
-                    <div style="flex: 1;">{{ message }}</div>
-                    <button type="button" onclick="this.parentElement.style.opacity='0'; setTimeout(() => this.parentElement.remove(), 500);" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: inherit; opacity: 0.6; cursor: pointer; padding: 0 0 0 1rem; margin: -0.5rem 0;">&times;</button>
-                </div>
-            {% endfor %}
+            <div id="messages-wrapper">
+                {% for message in messages %}
+                    <div class="card msg-alert {% if 'error' in message.tags %}msg-alert-error{% else %}msg-alert-success{% endif %}" style="display: flex; justify-content: space-between; align-items: center; transition: opacity 0.5s ease, transform 0.5s ease;">
+                        <div style="flex: 1;">{{ message }}</div>
+                        <button type="button" onclick="this.parentElement.style.opacity='0'; setTimeout(() => this.parentElement.remove(), 500);" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: inherit; opacity: 0.6; cursor: pointer; padding: 0 0 0 1rem; margin: -0.5rem 0;">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     const alerts = document.querySelectorAll('.msg-alert');
@@ -537,6 +585,19 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Professional Confirmation Modal (System-wide) -->
+    <div id="msgDeleteModal" class="msg-modal-overlay">
+        <div class="msg-modal-box">
+            <div class="msg-modal-icon"><i class="fas fa-trash-alt"></i></div>
+            <h5 class="msg-modal-title" id="deleteModalTitle">Confirm Action</h5>
+            <p class="msg-modal-body" id="deleteModalBody">Are you sure you want to proceed? This action cannot be undone.</p>
+            <div class="msg-modal-actions">
+                <button class="msg-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="msg-modal-confirm" id="deleteModalConfirm">Proceed</button>
+            </div>
+        </div>
+    </div>
 
     <div class="toast-container" id="toast-container"></div>
 
@@ -594,8 +655,6 @@
                     e.stopPropagation();
                 });
             }
-
-            // Real-time WebSocket Logic handled in script below
         })();
     </script>
 
@@ -628,7 +687,7 @@
                         const gain = globalAudioCtx.createGain();
                         
                         osc.type = 'sine';
-                        osc.frequency.setValueAtTime(880, now); // High pitch (A5)
+                        osc.frequency.setValueAtTime(880, now);
                         osc.frequency.exponentialRampToValueAtTime(440, now + 0.15);
                         
                         gain.gain.setValueAtTime(0, now);
@@ -642,11 +701,10 @@
                         osc.stop(now + 0.25);
                     }
                 } catch(e) {
-                    console.log('Global notification failed', e);
+                    console.log('Global notification sound failed', e);
                 }
             }
 
-            // Unified Toast Function for Chat
             function showChatToast(senderName, message, caseId) {
                 const link = `/case/${caseId}/?tab=messages`;
                 showToast(`New message from ${senderName}`, message, 'comment', link);
@@ -659,16 +717,11 @@
 
                 socket.onmessage = function(event) {
                     const data = JSON.parse(event.data);
-                    console.log("Global Notification Received:", data);
                     
                     if (data.type === 'notification_update') {
-                        console.log("New notification:", data.message);
-                        
-                        // Show a toast or update badge
                         const badge = document.querySelector('.notif-badge');
                         if (badge) badge.style.display = 'flex';
 
-                        // If it's a progress update, update corresponding elements if they exist on the current page
                         if (data.is_progress_update) {
                             const caseId = data.case_id;
                             const statusText = document.getElementById(`case-${caseId}-status-text`);
@@ -679,32 +732,40 @@
                             if (percentText) percentText.textContent = data.progress_percentage + '%';
                             if (barFill) barFill.style.width = data.progress_percentage + '%';
                             
-                            // Show premium notification
                             showToast("Progress Update", data.message, 'bullhorn', `/case/${caseId}/`);
                         }
                     } else if (data.type === 'chat_message') {
-                        // Play Sound only if not muted and not sent by the current user
                         const isMutedGlobally = localStorage.getItem('globalChatMuted') === 'true';
                         if (!isMutedGlobally && String(data.sender_id) !== "{{ request.user.id }}") {
                             playGlobalNotificationSound();
-                            // Show toast notification on all pages
                             showChatToast(data.sender_name, data.message, data.case_id);
+                            
+                            // Update Sidebar Badge
+                            const sidebarBadge = document.querySelector('a[href*="client_messages"] .badge');
+                            if (sidebarBadge) {
+                                let currentCount = parseInt(sidebarBadge.innerText) || 0;
+                                sidebarBadge.innerText = currentCount + 1;
+                                sidebarBadge.style.display = 'inline-block';
+                            } else {
+                                // Create badge if it doesn't exist
+                                const messagesLink = document.querySelector('a[href*="client_messages"]');
+                                if (messagesLink) {
+                                    const newBadge = document.createElement('span');
+                                    newBadge.className = 'badge rounded-pill';
+                                    newBadge.style.cssText = 'background: #ef4444; color: white; font-size: 0.7rem; padding: 0.25rem 0.6rem; margin-left: auto; border: 1px solid rgba(255,255,255,0.1);';
+                                    newBadge.innerText = '1';
+                                    messagesLink.appendChild(newBadge);
+                                }
+                            }
                         }
                         
-                        // Update green badge if it exists
                         const badgeElem = document.getElementById(`unread-${data.case_id}`);
                         if (badgeElem) {
                             badgeElem.style.display = 'inline-block';
                             let count = parseInt(badgeElem.innerText) || 0;
                             badgeElem.innerText = count + 1;
-                        } else if (document.location.pathname.includes('/messages/')) {
-                            const titleElem = document.querySelector(`#case-title-${data.case_id}`);
-                            if (titleElem) {
-                                titleElem.innerHTML += ` <span class="badge badge-hired ms-2" style="font-size: 0.8rem; background: #22c55e; color: white;" id="unread-${data.case_id}">1</span>`;
-                            }
                         }
                         
-                        // Optional toast for chat messages if not in chat page
                         if (!document.location.pathname.includes(`/case/${data.case_id}/`)) {
                             showToast(`New message from ${data.sender_name}: ${data.message}`);
                         }
@@ -712,7 +773,6 @@
                 };
 
                 socket.onclose = function() {
-                    console.log('Notification socket closed, reconnecting...');
                     setTimeout(connectNotifications, 3000);
                 };
             }
@@ -721,23 +781,75 @@
     {% endif %}
 
     <script>
-        (function() {
-            document.querySelectorAll('.notif-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    const id = this.dataset.id;
-                    if (id) {
-                        fetch(`/dashboard/notifications/read/${id}/`);
-                    }
-                });
-            });
-
-            const markAllReadBtn = document.getElementById('mark-all-read');
-            if (markAllReadBtn) {
-                 markAllReadBtn.addEventListener('click', function() {
-                      fetch(`/dashboard/notifications/mark-all-read/`).then(() => window.location.reload());
-                 });
+        function markNotificationAsRead(event, id, link) {
+            if (event) {
+                event.preventDefault();
             }
-        })();
+            
+            fetch(`/users/notifications/mark-read/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    if (link && link !== '#') {
+                        window.location.href = link;
+                    } else {
+                        location.reload();
+                    }
+                }
+            });
+        }
+
+        function markAllNotificationsAsRead(event) {
+            if (event) event.stopPropagation();
+            
+            fetch(`/users/notifications/mark-all-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        }
+
+        // Professional Modal Helper Functions
+        function showDeleteModal(title, body, confirmCallback, infoOnly = false) {
+            document.getElementById('deleteModalTitle').textContent = title;
+            document.getElementById('deleteModalBody').textContent = body;
+            const confirmBtn = document.getElementById('deleteModalConfirm');
+            
+            if (confirmBtn) {
+                if (infoOnly) {
+                    confirmBtn.style.display = 'none';
+                } else {
+                    confirmBtn.style.display = '';
+                    confirmBtn.onclick = function() {
+                        closeDeleteModal();
+                        if (typeof confirmCallback === 'function') confirmCallback();
+                    };
+                }
+            }
+            const modal = document.getElementById('msgDeleteModal');
+            if (modal) modal.classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('msgDeleteModal');
+            if (modal) modal.classList.remove('show');
+        }
+
+        // Close modal on outside click
+        const modalOverlay = document.getElementById('msgDeleteModal');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) closeDeleteModal();
+            });
+        }
     </script>
 </body>
 </html>
