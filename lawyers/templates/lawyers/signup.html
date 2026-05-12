@@ -336,11 +336,11 @@
             <div class="form-group" style="display: flex; gap: 1rem;">
                 <div style="flex: 1;">
                     <label for="first_name">First Name <span class="required">*</span></label>
-                    <input type="text" id="first_name" name="first_name" required placeholder="John">
+                    <input type="text" id="first_name" name="first_name" required placeholder="John" pattern="[a-zA-Z\s]+" title="Only letters and spaces are allowed">
                 </div>
                 <div style="flex: 1;">
                     <label for="last_name">Last Name <span class="required">*</span></label>
-                    <input type="text" id="last_name" name="last_name" required placeholder="Doe">
+                    <input type="text" id="last_name" name="last_name" required placeholder="Doe" pattern="[a-zA-Z\s]+" title="Only letters and spaces are allowed">
                 </div>
             </div>
 
@@ -415,6 +415,7 @@
             <li id="len" style="transition: all 0.2s">At least 8 characters</li>
             <li id="upper" style="transition: all 0.2s">At least 1 uppercase letter</li>
             <li id="special" style="transition: all 0.2s">At least 1 special symbol</li>
+            <li id="no-space" style="transition: all 0.2s">No spaces allowed</li>
             <li id="match" style="transition: all 0.2s">Passwords must match</li>
         `;
 
@@ -457,14 +458,25 @@
                 isValid = false;
             }
 
-            // Special character check
+            // Special character check (excluding spaces)
             const specialLi = document.getElementById('special');
-            if (/[\W_]/.test(pVal)) {
+            if (/[^A-Za-z0-9\s]/.test(pVal)) {
                 specialLi.style.color = successColor;
                 specialLi.innerHTML = '<i class="fas fa-check"></i> At least 1 special symbol';
             } else {
                 specialLi.style.color = errorColor;
                 specialLi.innerHTML = '<i class="fas fa-times"></i> At least 1 special symbol';
+                isValid = false;
+            }
+
+            // Space check
+            const spaceLi = document.getElementById('no-space');
+            if (!/\s/.test(pVal)) {
+                spaceLi.style.color = successColor;
+                spaceLi.innerHTML = '<i class="fas fa-check"></i> No spaces allowed';
+            } else {
+                spaceLi.style.color = errorColor;
+                spaceLi.innerHTML = '<i class="fas fa-times"></i> No spaces allowed';
                 isValid = false;
             }
 
@@ -492,12 +504,6 @@
 
         passwordInput.addEventListener('input', validate);
         confirmInput.addEventListener('input', validate);
-
-        form.addEventListener('submit', function (e) {
-            if (!validate()) {
-                e.preventDefault();
-            }
-        });
 
         // Initial validate call
         validate();
@@ -530,11 +536,31 @@
             }
         });
 
-        ['first_name', 'last_name'].forEach(function(id) {
-            document.getElementById(id).addEventListener('input', function (e) {
+        ['first_name', 'last_name'].forEach(function (id) {
+            const input = document.getElementById(id);
+            input.addEventListener('input', function (e) {
                 // Remove all non-letter characters
                 this.value = this.value.replace(/[^a-zA-Z\s]/g, '');
             });
+
+            input.addEventListener('blur', function() {
+                this.value = this.value.trim();
+            });
+        });
+
+        form.addEventListener('submit', function (e) {
+            const firstName = document.getElementById('first_name').value.trim();
+            const lastName = document.getElementById('last_name').value.trim();
+            
+            if (firstName.length === 0 || lastName.length === 0) {
+                alert('First and Last names cannot be empty.');
+                e.preventDefault();
+                return;
+            }
+
+            if (!validate()) {
+                e.preventDefault();
+            }
         });
 
         // Auto-hide messages after 5 seconds

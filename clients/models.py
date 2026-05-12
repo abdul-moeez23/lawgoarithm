@@ -16,7 +16,7 @@ class Case(models.Model):
     )
 
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_cases')
-    title = models.CharField(max_length=200, default="Untitled Case")
+    title = models.CharField(max_length=200)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True)
     court_level = models.ForeignKey(Court, on_delete=models.SET_NULL, null=True)
@@ -50,6 +50,7 @@ class CaseDocument(models.Model):
     title = models.CharField(max_length=150, blank=True)
     file = models.FileField(upload_to='case_docs/')
     uploaded_at = models.DateTimeField(default=timezone.now)
+    is_deleted_everyone = models.BooleanField(default=False)
     hidden_for = models.ManyToManyField(User, related_name='hidden_documents', blank=True)
 
     def __str__(self):

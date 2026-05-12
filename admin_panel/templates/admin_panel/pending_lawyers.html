@@ -102,14 +102,9 @@
                     </td>
 
                     <td class="text-end" {% if request.GET.highlight_id|add:'0' == r.id %}style="background-color: #e0f2fe !important;"{% endif %}>
-                        <div class="d-flex flex-column gap-2 align-items-end">
-                            <a href="{% url 'approve_lawyer' r.id %}" class="btn btn-success btn-sm w-100 justify-content-center">
-                                <i class="fas fa-check me-1"></i> Approve
-                            </a> 
-                            <a href="{% url 'reject_lawyer' r.id %}" class="btn btn-outline-danger btn-sm w-100 justify-content-center">
-                                <i class="fas fa-times me-1"></i> Reject
-                            </a>
-                        </div>
+                        <a href="{% url 'review_lawyer_application' r.id %}" class="btn btn-primary-custom btn-sm w-100 justify-content-center">
+                            <i class="fas fa-search me-1"></i> Review
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}

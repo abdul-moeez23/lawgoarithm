@@ -9,14 +9,16 @@
         {% csrf_token %}
         <div style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">First Name</label>
-            <input type="text" name="first_name" value="{{ user.first_name }}" 
-                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;">
+            <input type="text" name="first_name" id="first_name" value="{{ user.first_name }}" 
+                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;"
+                pattern="[a-zA-Z\s]+" title="Only letters and spaces are allowed">
         </div>
         
         <div style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Last Name</label>
-            <input type="text" name="last_name" value="{{ user.last_name }}" 
-                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;">
+            <input type="text" name="last_name" id="last_name" value="{{ user.last_name }}" 
+                style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px;"
+                pattern="[a-zA-Z\s]+" title="Only letters and spaces are allowed">
         </div>
 
         <div style="margin-bottom: 1.5rem;">
@@ -34,4 +36,75 @@
         <button type="submit" class="btn-primary">Save Changes</button>
     </form>
 </div>
+
+<div class="card shadow-sm border-0 rounded-4" style="max-width: 600px; margin-top: 2rem; background: #fff; overflow: hidden;">
+    <div class="card-body p-4">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: rgba(15, 23, 42, 0.05); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0f172a;">
+                <i class="fas fa-shield-halved fa-lg"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #0f172a; font-family: 'Poppins', sans-serif;">Account Security</h3>
+                <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Manage your account credentials</p>
+            </div>
+        </div>
+        
+        <!-- Content Area -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 250px;">
+                <p style="margin: 0; font-weight: 600; color: #1e293b; font-size: 0.95rem;">Password Management</p>
+                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: #64748b; line-height: 1.5;">
+                    {% if user.has_usable_password %}
+                        Keep your account safe by updating your password regularly.
+                    {% else %}
+                        You haven't set a password yet (Signed in via Social). Set one to enable manual login.
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                {% if user.has_usable_password %}
+                    <a href="{% url 'account_change_password' %}" class="btn-security-primary" style="background: #fff; color: #0f172a; border: 1px solid #e2e8f0; text-decoration: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                        <i class="fas fa-key small"></i> Change Password
+                    </a>
+                {% else %}
+                    <a href="{% url 'account_set_password' %}" class="btn-security-primary" style="background: #0f172a; color: #fff; text-decoration: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;">
+                        <i class="fas fa-plus-circle small"></i> Set Password
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-security-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        color: inherit;
+    }
+</style>
+
+<script>
+    ['first_name', 'last_name'].forEach(function(id) {
+        const input = document.getElementById(id);
+        input.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^a-zA-Z\s]/g, '');
+        });
+
+        input.addEventListener('blur', function() {
+            this.value = this.value.trim();
+        });
+    });
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const firstName = document.getElementById('first_name').value.trim();
+        const lastName = document.getElementById('last_name').value.trim();
+        
+        if (firstName.length === 0 || lastName.length === 0) {
+            alert('First and Last names cannot be empty.');
+            e.preventDefault();
+        }
+    });
+</script>
 {% endblock %}

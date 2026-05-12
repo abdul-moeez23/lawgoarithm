@@ -21,6 +21,7 @@
                 <tr>
                     <th>Document Title</th>
                     <th>Associated Case</th>
+                    <th>Client</th>
                     <th>Uploaded Date</th>
                     <th>File</th>
                     <th>Action</th>
@@ -37,8 +38,14 @@
                     </td>
                     <td>
                         <a href="{% url 'lawyer_case_detail' doc.case.id %}" class="text-decoration-none">
-                            <i class="fas fa-briefcase me-1 small"></i> {{ doc.case.title }}
+                            <i class="fas fa-briefcase me-1 small"></i> [#{{ doc.case.id }}] {{ doc.case.title }}
                         </a>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="avatar-sm-text me-2">{{ doc.case.client.get_full_name|slice:":1"|default:doc.case.client.email|slice:":1" }}</span>
+                            <span>{{ doc.case.client.get_full_name|default:doc.case.client.email }}</span>
+                        </div>
                     </td>
                     <td>
                         <span class="text-muted"><i class="far fa-clock me-1"></i> {{ doc.uploaded_at|date:"d M Y" }}</span>
@@ -49,8 +56,8 @@
                     <td>
                         <div class="d-flex gap-2">
                             <div class="btn-group">
-                                <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-success" target="_blank" title="Download">
-                                    <i class="fas fa-download"></i>
+                                <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-success" target="_blank" title="View">
+                                    <i class="fas fa-eye"></i>
                                 </a>
                                 <a href="{% url 'lawyer_case_detail' doc.case.id %}" class="btn btn-sm btn-outline-primary" title="View Case">
                                     <i class="fas fa-external-link-alt"></i>
@@ -118,7 +125,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const docId = urlParts[urlParts.length - 4];
             const mode = this.getAttribute('data-mode');
             
-            if (mode === 'everyone' && !confirm('Are you sure you want to delete this file for everyone?')) {
+            if (mode === 'everyone') {
+                showDeleteModal(
+                    'Delete for Everyone?',
+                    'This will hide the document from all users. Note: You can only do this within 10 minutes of upload. A permanent record is kept for Admin review.',
+                    function() {
+                        if (dashboardSocket.readyState === WebSocket.OPEN) {
+                            dashboardSocket.send(JSON.stringify({
+                                'action': 'delete_document',
+                                'document_id': docId,
+                                'mode': mode
+                            }));
+                        } else {
+                            alert('Connection lost. Please refresh.');
+                        }
+                    }
+                );
                 return;
             }
             
@@ -135,4 +157,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<style>
+    .avatar-sm-text {
+        width: 24px; height: 24px; border-radius: 50%;
+        background: #364d59; color: #fee2b3;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.7rem; font-weight: 700;
+    }
+</style>
 {% endblock %}

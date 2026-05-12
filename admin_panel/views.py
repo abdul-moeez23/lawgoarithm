@@ -85,9 +85,34 @@ def approve_lawyer(request, id):
     # Delete notifications where the link contains this lawyer's ID
     Notification.objects.filter(link__contains=f"highlight_id={id}").delete()
     
-    messages.success(request, f"Lawyer {lawyer.user_id} ka profile approve ho gaya." ,extra_tags="admin_error")
+    # Send email notification to the lawyer
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        subject = "Congratulations! Your Lawyer Profile is Approved"
+        message = f"Hello {lawyer.user.get_full_name()},\n\nWe are pleased to inform you that your profile on Lawgorithm has been reviewed and approved by our admin team.\n\nYou can now log in and access your lawyer dashboard to start receiving cases.\n\nBest Regards,\nThe Lawgorithm Team"
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [lawyer.user.email],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Failed to send approval email: {e}")
+    
+    messages.success(request, f"Lawyer {lawyer.user.get_full_name() or lawyer.user.username}'s profile has been approved successfully." ,extra_tags="admin_error")
     
     return redirect('admin_dashboard')
+
+
+@login_required(login_url='admin_login')
+@never_cache
+def review_lawyer_application(request, id):
+    lawyer = get_object_or_404(LawyerProfile, id=id)
+    return render(request, 'admin_panel/review_lawyer.html', {'lawyer': lawyer})
 
 
 @login_required(login_url='admin_login')
@@ -100,19 +125,58 @@ def approved_lawyers(request):
 
 @login_required(login_url='admin_login')
 @never_cache
+def request_changes_lawyer(request, id):
+    lawyer = get_object_or_404(LawyerProfile, id=id)
+    
+    if request.method == "POST":
+        reason = request.POST.get("rejection_reason") # Reusing the same name from modal
+        lawyer.verification_status = 'incomplete'
+        lawyer.rejection_reason = reason
+        lawyer.save()
+        
+        # Send email notification
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            subject = "Action Required: Please Update Your Lawyer Profile"
+            message = f"Hello {lawyer.user.get_full_name()},\n\nOur admin team has reviewed your profile and requires some additional information or changes before we can approve your account.\n\nChanges Requested:\n{reason}\n\nPlease log in to your dashboard and update your profile details to proceed with verification.\n\nBest Regards,\nThe Lawgorithm Team"
+            
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [lawyer.user.email],
+                fail_silently=True,
+            )
+        except:
+            pass
+
+        messages.info(request, f"Changes requested from {lawyer.user.get_full_name()}. They have been notified via email.")
+        return redirect('pending_lawyer_requests')
+    
+    return redirect('review_lawyer_application', id=id)
+
+
+@login_required(login_url='admin_login')
+@never_cache
 def reject_lawyer(request, id):
     lawyer = get_object_or_404(LawyerProfile, id=id)
 
-    lawyer.verification_status = 'rejected'
-
-    lawyer.save()
+    if request.method == "POST":
+        reason = request.POST.get("rejection_reason")
+        lawyer.verification_status = 'rejected'
+        lawyer.rejection_reason = reason
+        lawyer.save()
+        
+        # Clean up notifications related to this lawyer request
+        from users.models import Notification
+        Notification.objects.filter(link__contains=f"highlight_id={id}").delete()
+        
+        messages.success(request, f"Lawyer {lawyer.user.get_full_name() or lawyer.user.username}'s application has been rejected.")
+        return redirect('pending_lawyer_requests')
     
-    # Clean up notifications related to this lawyer request
-    from users.models import Notification
-    Notification.objects.filter(link__contains=f"highlight_id={id}").delete()
-    
-    # messages.success(request, f"Lawyer {lawyer.user_id} ka profile reject ho gaya.")
-    return redirect('admin_dashboard')
+    return redirect('review_lawyer_application', id=id)
 
 # =========================
 # DATA MANAGEMENT VIEWS
@@ -127,19 +191,36 @@ def manage_cities(request):
         action = request.POST.get("action")
         
         if action == "add":
-            name = request.POST.get("name")
-            if name:
+            name = request.POST.get("name", "").strip()
+            
+            import re
+            if not name or len(name) < 2:
+                messages.error(request, "City name must be at least 2 characters long.", extra_tags="admin_error")
+            elif not re.match(r'^[A-Za-z\s]+$', name):
+                messages.error(request, "City name can only contain letters and spaces.", extra_tags="admin_error")
+            elif City.objects.filter(name__iexact=name).exists():
+                messages.error(request, f"City '{name}' already exists.", extra_tags="admin_error")
+            else:
                 City.objects.create(name=name)
                 messages.success(request, f"City '{name}' added successfully!", extra_tags="admin_error")
         
         elif action == "edit":
             city_id = request.POST.get("city_id")
-            name = request.POST.get("name")
-            if city_id and name:
-                city = City.objects.get(id=city_id)
-                city.name = name
-                city.save()
-                messages.success(request, "City updated successfully!" ,extra_tags="admin_error")
+            name = request.POST.get("name", "").strip()
+            
+            import re
+            if city_id:
+                if not name or len(name) < 2:
+                    messages.error(request, "City name must be at least 2 characters long.", extra_tags="admin_error")
+                elif not re.match(r'^[A-Za-z\s]+$', name):
+                    messages.error(request, "City name can only contain letters and spaces.", extra_tags="admin_error")
+                elif City.objects.filter(name__iexact=name).exclude(id=city_id).exists():
+                    messages.error(request, f"City '{name}' already exists.", extra_tags="admin_error")
+                else:
+                    city = City.objects.get(id=city_id)
+                    city.name = name
+                    city.save()
+                    messages.success(request, "City updated successfully!" ,extra_tags="admin_error")
         
         elif action == "delete":
             city_id = request.POST.get("city_id")
@@ -165,19 +246,34 @@ def manage_courts(request):
         action = request.POST.get("action")
         
         if action == "add":
-            name = request.POST.get("name")
-            if name:
+            name = request.POST.get("name", "").strip()
+            import re
+            if not name or len(name) < 2:
+                messages.error(request, "Court name must be at least 2 characters long.", extra_tags="admin_error")
+            elif not re.match(r'^[A-Za-z\s]+$', name):
+                messages.error(request, "Court name can only contain letters and spaces.", extra_tags="admin_error")
+            elif Court.objects.filter(name__iexact=name).exists():
+                messages.error(request, f"Court '{name}' already exists.", extra_tags="admin_error")
+            else:
                 Court.objects.create(name=name)
-                messages.success(request, f"Court '{name}' added successfully!",extra_tags="admin_error")
+                messages.success(request, f"Court '{name}' added successfully!", extra_tags="admin_error")
         
         elif action == "edit":
             court_id = request.POST.get("court_id")
-            name = request.POST.get("name")
-            if court_id and name:
-                court = Court.objects.get(id=court_id)
-                court.name = name
-                court.save()
-                messages.success(request, "Court updated successfully!",extra_tags="admin_error")
+            name = request.POST.get("name", "").strip()
+            import re
+            if court_id:
+                if not name or len(name) < 2:
+                    messages.error(request, "Court name must be at least 2 characters long.", extra_tags="admin_error")
+                elif not re.match(r'^[A-Za-z\s]+$', name):
+                    messages.error(request, "Court name can only contain letters and spaces.", extra_tags="admin_error")
+                elif Court.objects.filter(name__iexact=name).exclude(id=court_id).exists():
+                    messages.error(request, f"Court '{name}' already exists.", extra_tags="admin_error")
+                else:
+                    court = Court.objects.get(id=court_id)
+                    court.name = name
+                    court.save()
+                    messages.success(request, "Court updated successfully!", extra_tags="admin_error")
         
         elif action == "delete":
             court_id = request.POST.get("court_id")
@@ -204,29 +300,51 @@ def manage_practice_areas(request):
         action = request.POST.get("action")
         
         if action == "add_category":
-            name = request.POST.get("category_name")
-            if name:
+            name = request.POST.get("category_name", "").strip()
+            import re
+            if not name or len(name) < 2:
+                messages.error(request, "Category name must be at least 2 characters long.", extra_tags="admin_error")
+            elif not re.match(r'^[A-Za-z\s&\-\(\)\/]+$', name):
+                messages.error(request, "Category name contains invalid characters.", extra_tags="admin_error")
+            elif Category.objects.filter(name__iexact=name).exists():
+                messages.error(request, f"Category '{name}' already exists.", extra_tags="admin_error")
+            else:
                 Category.objects.create(name=name)
-                messages.success(request, f"Category '{name}' added successfully!",extra_tags="admin_error")
+                messages.success(request, f"Category '{name}' added successfully!", extra_tags="admin_error")
         
         elif action == "add":
-            name = request.POST.get("name")
+            name = request.POST.get("name", "").strip()
             category_id = request.POST.get("category_id")
-            if name and category_id:
+            import re
+            if not name or len(name) < 2:
+                messages.error(request, "Practice area name must be at least 2 characters long.", extra_tags="admin_error")
+            elif not re.match(r'^[A-Za-z\s&\-\(\)\/]+$', name):
+                messages.error(request, "Practice area name contains invalid characters.", extra_tags="admin_error")
+            elif category_id and SubCategory.objects.filter(name__iexact=name, category_id=category_id).exists():
+                messages.error(request, f"Practice area '{name}' already exists in this category.", extra_tags="admin_error")
+            elif name and category_id:
                 category = Category.objects.get(id=category_id)
                 SubCategory.objects.create(name=name, category=category)
-                messages.success(request, f"Practice area '{name}' added successfully!",extra_tags="admin_error")
+                messages.success(request, f"Practice area '{name}' added successfully!", extra_tags="admin_error")
         
         elif action == "edit":
             area_id = request.POST.get("area_id")
-            name = request.POST.get("name")
+            name = request.POST.get("name", "").strip()
             category_id = request.POST.get("category_id")
-            if area_id and name and category_id:
-                area = SubCategory.objects.get(id=area_id)
-                area.name = name
-                area.category_id = category_id
-                area.save()
-                messages.success(request, "Practice area updated successfully!",extra_tags="admin_error")
+            import re
+            if area_id:
+                if not name or len(name) < 2:
+                    messages.error(request, "Practice area name must be at least 2 characters long.", extra_tags="admin_error")
+                elif not re.match(r'^[A-Za-z\s&\-\(\)\/]+$', name):
+                    messages.error(request, "Practice area name contains invalid characters.", extra_tags="admin_error")
+                elif SubCategory.objects.filter(name__iexact=name, category_id=category_id).exclude(id=area_id).exists():
+                    messages.error(request, f"Practice area '{name}' already exists in this category.", extra_tags="admin_error")
+                elif name and category_id:
+                    area = SubCategory.objects.get(id=area_id)
+                    area.name = name
+                    area.category_id = category_id
+                    area.save()
+                    messages.success(request, "Practice area updated successfully!", extra_tags="admin_error")
         
         elif action == "delete":
             area_id = request.POST.get("area_id")

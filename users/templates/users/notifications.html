@@ -1,0 +1,321 @@
+{% extends base_template %}
+
+{% block title %}Recent Activity - Lawgorithm{% endblock %}
+{% block header_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0 mb-4 rounded-4" style="background-color: white; min-height: 80vh;">
+    <div class="card-header bg-white py-4 border-0 px-4">
+        <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 1.1rem;">
+            <i class="fas fa-bell text-dark"></i> Recent Activity
+        </h5>
+    </div>
+    
+    <div class="card-body px-4 pt-0 pb-5">
+        <div class="notification-list-wrapper">
+            {% for notif in page_obj %}
+            {% if notif.link %}
+            <a href="{{ notif.link }}" class="notif-card-link" onclick="markNotificationAsRead(event, '{{ notif.id }}', '{{ notif.link }}')">
+            {% endif %}
+            <div class="notif-box-compact {% if not notif.is_read %}unread{% endif %}" id="notif-page-{{ notif.id }}">
+                <div class="notif-box-inner position-relative">
+                    {% if not notif.is_read %}
+                    <div class="unread-indicator"></div>
+                    {% endif %}
+                    
+                    <!-- Icon Box (Left) -->
+                    {% with title_lower=notif.title|lower %}
+                    <div class="notif-icon-container 
+                        {% if 'message' in title_lower %}bg-soft-blue
+                        {% elif 'fee' in title_lower %}bg-soft-gold
+                        {% elif 'hired' in title_lower or 'accepted' in title_lower %}bg-soft-green
+                        {% elif 'case' in title_lower %}bg-soft-slate
+                        {% else %}bg-soft-gray{% endif %}">
+                        <i class="fas {% if 'message' in title_lower %}fa-envelope{% elif 'fee' in title_lower %}fa-money-bill-wave{% elif 'hired' in title_lower or 'accepted' in title_lower %}fa-handshake{% elif 'case' in title_lower %}fa-briefcase{% else %}fa-info-circle{% endif %}"></i>
+                    </div>
+                    {% endwith %}
+                    
+                    <!-- Content area -->
+                    <div class="notif-content-area">
+                        <div class="notif-header-row">
+                            <h4 class="notif-title-text">{{ notif.title }}</h4>
+                            <span class="notif-time-text">
+                                <i class="far fa-clock"></i> {{ notif.created_at|timesince }} ago
+                            </span>
+                        </div>
+                        <p class="notif-description-text">{{ notif.message }}</p>
+                        
+                        {% if request.user.role == 'lawyer' and notif.link %}
+                        <div class="notif-action-row">
+                            <span class="professional-btn-sm">
+                                View Details <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if notif.link %}
+            </a>
+            {% endif %}
+            {% empty %}
+            <div class="empty-state-container">
+                <div class="empty-state-icon">
+                    <i class="fas fa-bell-slash"></i>
+                </div>
+                <h5 class="empty-state-title">All caught up!</h5>
+                <p class="empty-state-text">No recent activity to show at the moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="custom-pagination-container">
+            {% if page_obj.has_previous %}
+            <a class="pagination-arrow" href="?page={{ page_obj.previous_page_number }}">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            {% endif %}
+
+            <div class="pagination-numbers">
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <span class="pagination-number active">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a class="pagination-number" href="?page={{ num }}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_next %}
+            <a class="pagination-arrow" href="?page={{ page_obj.next_page_number }}">
+                <i class="fas fa-arrow-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    :root {
+        --c-blue: #3b82f6;
+        --c-green: #10b981;
+        --c-gold: #f59e0b;
+        --c-slate: #475569;
+        --bg-notif: #ffffff;
+        --border-notif: #f1f5f9;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+    }
+
+    .notif-card-link {
+        text-decoration: none !important;
+        display: block;
+        color: inherit !important;
+        margin-bottom: 1.25rem;
+    }
+
+    .notification-list-wrapper {
+        padding-top: 3rem;
+    }
+
+    .notif-box-compact {
+        background: var(--bg-notif);
+        border-radius: 14px;
+        border: 1px solid var(--border-notif);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    /* Professional Border Differentiation */
+    .notif-box-compact.unread {
+        border-left: 4px solid var(--c-blue);
+        background: linear-gradient(to right, #f8fafc, #ffffff);
+        border-color: #e2e8f0;
+    }
+
+    .notif-card-link:hover .notif-box-compact {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px -10px rgba(0,0,0,0.08);
+        border-color: #cbd5e1;
+    }
+
+    .notif-box-inner {
+        display: flex;
+        padding: 1.5rem;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    /* Icon Styling */
+    .notif-icon-container {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        transition: transform 0.2s;
+    }
+
+    .bg-soft-blue { background: #eff6ff; color: var(--c-blue); }
+    .bg-soft-green { background: #ecfdf5; color: var(--c-green); }
+    .bg-soft-gold { background: #fffbeb; color: var(--c-gold); }
+    .bg-soft-slate { background: #f8fafc; color: var(--c-slate); }
+    .bg-soft-gray { background: #f1f5f9; color: #94a3b8; }
+
+    .notif-card-link:hover .notif-icon-container {
+        transform: scale(1.1) rotate(-3deg);
+    }
+
+    /* Content Layout */
+    .notif-content-area {
+        flex: 1;
+        min-width: 0; /* Prevent overflow */
+    }
+
+    .notif-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        gap: 1rem;
+    }
+
+    .notif-title-text {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .notif-time-text {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .notif-description-text {
+        font-size: 1rem;
+        color: #475569;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* Action Button */
+    .notif-action-row {
+        margin-top: 1rem;
+    }
+
+    .professional-btn-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--text-primary);
+        color: white;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .notif-card-link:hover .professional-btn-sm {
+        background: #000;
+        padding-right: 1.25rem;
+    }
+
+    /* Unread Dot */
+    .unread-indicator {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 8px;
+        height: 8px;
+        background: var(--c-blue);
+        border-radius: 50%;
+    }
+
+    /* Empty State & Pagination */
+    .empty-state-container {
+        text-align: center;
+        padding: 4rem 1rem;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        color: #e2e8f0;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state-title {
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .empty-state-text {
+        color: var(--text-secondary);
+    }
+
+    .custom-pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 3rem;
+    }
+
+    .pagination-numbers {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .pagination-number, .pagination-arrow {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .pagination-number.active {
+        background: var(--text-primary);
+        color: white;
+        border-color: var(--text-primary);
+    }
+
+    .pagination-number:not(.active):hover, .pagination-arrow:hover {
+        background: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+    }
+
+    @media (max-width: 600px) {
+        .notif-box-inner {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .notif-header-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}

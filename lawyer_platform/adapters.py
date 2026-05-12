@@ -10,9 +10,21 @@ class MyAccountAdapter(DefaultAccountAdapter):
         user = request.user
         if user.is_authenticated:
             if user.role == 'lawyer':
-                return resolve_url('lawyer_dashboard')
+                from lawyers.models import LawyerProfile
+                try:
+                    lp = user.lawyer_profile
+                    if lp.verification_status == 'approved':
+                        return resolve_url('lawyer_dashboard')
+                    elif lp.verification_status == 'pending':
+                        return resolve_url('waiting_verification')
+                    else:
+                        return resolve_url('lawyer_profile_complete')
+                except LawyerProfile.DoesNotExist:
+                    return resolve_url('lawyer_profile_complete')
+            
             elif user.role == 'client':
-                return resolve_url('client_dashboard') # Assuming 'client_dashboard' is the URL name
+                return resolve_url('client_dashboard')
+        
         return resolve_url(settings.LOGIN_REDIRECT_URL)
 
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):

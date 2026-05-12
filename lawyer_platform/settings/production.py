@@ -1,4 +1,5 @@
 from .base import *
+import os
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Use environment variables for sensitive data
@@ -10,16 +11,12 @@ ALLOWED_HOSTS = ['moeez.kashmirtech.dev', 'www.moeez.kashmirtech.dev']
 # Consider using environment variables for database credentials
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": 'kashesvi_lawyerplatform_db', # Example from your old settings
-        'USER': 'kashesvi_root',              # Example from your old settings
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        }
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("DB_NAME", "lawyerplatform_db"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 

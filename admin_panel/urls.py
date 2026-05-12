@@ -7,7 +7,9 @@ urlpatterns = [
     path('dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('logout/', views.admin_logout, name='admin_logout'),
     path('pending-lawyers/', views.pending_lawyer_requests, name='pending_lawyer_requests'),
+    path('review-lawyer/<int:id>/', views.review_lawyer_application, name='review_lawyer_application'),
     path('approve-lawyer/<int:id>/', views.approve_lawyer, name='approve_lawyer'),
+    path('request-changes/<int:id>/', views.request_changes_lawyer, name='request_changes_lawyer'),
     path('reject-lawyer/<int:id>/', views.reject_lawyer, name='reject_lawyer'),
 
 #     # view approved lawyers

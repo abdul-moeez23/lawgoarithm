@@ -16,8 +16,9 @@
         margin-bottom: 0.5rem;
         display: block;
     }
-    
-    .form-control, .form-select {
+
+    .form-control,
+    .form-select {
         width: 100%;
         padding: 0.75rem 1rem;
         border: 1px solid var(--border-color);
@@ -28,7 +29,8 @@
         background-color: #fff;
     }
 
-    .form-control:focus, .form-select:focus {
+    .form-control:focus,
+    .form-select:focus {
         outline: none;
         border-color: var(--accent-gold);
         box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
@@ -46,7 +48,7 @@
         padding-bottom: 0.5rem;
         border-bottom: 1px solid var(--border-color);
     }
-    
+
     .submit-btn {
         background-color: var(--accent-gold);
         color: var(--primary-navy);
@@ -87,14 +89,14 @@
 <div class="card" style="max-width: 900px; margin: 0 auto;">
     <form method="POST" action="">
         {% csrf_token %}
-        
+
         <div class="form-section-title">Case Details</div>
 
         <div class="form-group">
             <label for="{{ form.title.id_for_label }}" class="form-label">Case Title</label>
             {{ form.title }}
             {% if form.title.errors %}
-                <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+            <div class="text-danger small mt-1">{{ form.title.errors }}</div>
             {% endif %}
         </div>
 
@@ -120,25 +122,25 @@
             </div>
         </div>
 
-        </div>
+</div>
 
-        <div class="form-group">
-            <label for="{{ form.urgency.id_for_label }}" class="form-label">Urgency</label>
-            {{ form.urgency }}
-        </div>
+<div class="form-group">
+    <label for="{{ form.urgency.id_for_label }}" class="form-label">Urgency</label>
+    {{ form.urgency }}
+</div>
 
-        <div class="form-group">
-            <label for="{{ form.description.id_for_label }}" class="form-label">Case Description</label>
-            {{ form.description }}
-            {% if form.description.errors %}
-                <div class="text-danger small mt-1">{{ form.description.errors }}</div>
-            {% endif %}
-            <small class="text-muted">Please provide as much detail as possible to help lawyers understand your case.</small>
-        </div>
+<div class="form-group">
+    <label for="{{ form.description.id_for_label }}" class="form-label">Case Description</label>
+    {{ form.description }}
+    {% if form.description.errors %}
+    <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+    {% endif %}
+    <small class="text-muted">Please provide as much detail as possible to help lawyers understand your case.</small>
+</div>
 
-        <div style="margin-top: 2rem;">
-            <button type="submit" class="submit-btn">Post Case</button>
-        </div>
-    </form>
+<div style="margin-top: 2rem;">
+    <button type="submit" class="submit-btn">Post Case</button>
+</div>
+</form>
 </div>
 {% endblock %}

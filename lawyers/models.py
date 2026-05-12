@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 # from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator, MaxValueValidator
+from pgvector.django import VectorField
 from users.models import User, City, Court, SubCategory, FeeBand, Language
 
 
@@ -12,8 +13,14 @@ class LawyerProfile(models.Model):
     bar_enrollment = models.CharField(max_length=150)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True)
     # fee_band = models.ForeignKey(FeeBand, on_delete=models.SET_NULL, null=True)
-    experience_years = models.IntegerField(default=0)
-
+    enrollment_date = models.DateField(null=True, blank=True)
+    
+    @property
+    def experience_years(self):
+        if self.enrollment_date:
+            from datetime import date
+            return date.today().year - self.enrollment_date.year
+        return 0
 
     courts = models.ManyToManyField(Court)
     # languages = models.ManyToManyField(Language)
@@ -22,9 +29,18 @@ class LawyerProfile(models.Model):
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     verification_status = models.CharField(
         max_length=20,
-        choices=(('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')),
+        choices=(
+            ('pending', 'Pending'), 
+            ('approved', 'Approved'), 
+            ('rejected', 'Rejected'),
+            ('incomplete', 'Changes Requested')
+        ),
         default='pending'
     )
+    rejection_reason = models.TextField(blank=True, null=True)
+    embedding_vector = VectorField(dimensions=384, blank=True, null=True)
+    embedding_model_version = models.CharField(max_length=120, default="", blank=True)
+    embedding_updated_at = models.DateTimeField(blank=True, null=True)
 
 
 
