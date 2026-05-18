@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - upload-clean
 
 jobs:
   web-deploy:
