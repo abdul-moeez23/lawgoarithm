@@ -333,6 +333,58 @@
     .text-muted {
         color: #6b7280;
     }
+
+    /* Mobile-first adjustments for Case Detail Page */
+    @media (max-width: 992px) {
+        .detail-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+        }
+        .case-nav {
+            gap: 1.25rem !important;
+            padding-bottom: 0.5rem !important;
+            margin-bottom: 1.5rem !important;
+            border-bottom: 2px solid var(--border-color) !important;
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important; /* Firefox */
+        }
+        .case-nav::-webkit-scrollbar {
+            display: none !important; /* Safari/Chrome */
+        }
+        .case-tab {
+            flex-shrink: 0 !important;
+            padding: 0.75rem 0.25rem !important;
+            font-size: 0.95rem !important;
+        }
+        .message-container {
+            height: calc(100vh - 280px) !important;
+            min-height: 400px !important;
+        }
+        .message-bubble {
+            max-width: 85% !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .message-container {
+            height: calc(100vh - 240px) !important;
+            min-height: 350px !important;
+        }
+        .message-header {
+            padding: 0.5rem 1rem !important;
+        }
+        .message-list {
+            padding: 1rem !important;
+            gap: 0.75rem !important;
+        }
+        .message-bubble {
+            max-width: 90% !important;
+            font-size: 0.9rem !important;
+            padding: 0.6rem 0.8rem !important;
+        }
+    }
 </style>
 
 <div class="case-nav custom-tabs-container">
