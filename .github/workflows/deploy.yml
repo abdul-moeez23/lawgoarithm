@@ -23,10 +23,6 @@ jobs:
             echo "Connected to server! Starting deployment..."
             cd ~/lawgoarithm
             
-            # Fetch latest references and checkout the correct branch on the server
-            git fetch origin
-            git checkout ${{ github.ref_name }} || git checkout -b ${{ github.ref_name }}
-            
             # Pull latest changes from the branch that triggered the workflow
             git pull origin ${{ github.ref_name }}
             
@@ -39,3 +35,4 @@ jobs:
             docker compose exec -T web python manage.py collectstatic --noinput
             
             echo "Deployment finished successfully!"
+
