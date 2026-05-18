@@ -272,8 +272,9 @@ def lawyer_dashboard(request):
     from django.utils import timezone
     from clients.models import Appointment, CaseDocument
     
+    from django.db.models import Q
     appointments_count = Appointment.objects.filter(
-        organizer=lawyer,
+        Q(organizer=lawyer) | Q(attendee=lawyer),
         datetime__gte=timezone.now(),
         status='scheduled'
     ).count()
@@ -934,7 +935,10 @@ def lawyer_appointments(request):
     Global list of appointments for the lawyer.
     """
     from clients.models import Appointment
-    appointments = Appointment.objects.filter(organizer=request.user).order_by('datetime')
+    from django.db.models import Q
+    appointments = Appointment.objects.filter(
+        Q(organizer=request.user) | Q(attendee=request.user)
+    ).order_by('datetime')
     return render(request, 'lawyers/appointments.html', {'appointments': appointments})
 
 
@@ -1078,12 +1082,45 @@ def lawyer_upload_document(request):
 @approved_lawyer_required
 def cancel_appointment(request, appointment_id):
     from clients.models import Appointment
-    appointment = get_object_or_404(Appointment, pk=appointment_id, organizer=request.user)
+    from django.db.models import Q
+    from users.models import Notification
+    
+    appointment = get_object_or_404(
+        Appointment, 
+        Q(organizer=request.user) | Q(attendee=request.user), 
+        pk=appointment_id
+    )
     
     if request.method == "POST":
         appointment.status = 'cancelled'
         appointment.save()
-        messages.success(request, "Appointment has been cancelled.")
+        
+        # Notify the client
+        Notification.objects.create(
+            recipient=appointment.case.client,
+            title="Appointment Cancelled ❌",
+            message=f"Lawyer {request.user.get_full_name() or request.user.email} has cancelled the appointment: '{appointment.title}' scheduled for {appointment.datetime.strftime('%d %b %Y at %I:%M %p')}.",
+            link=f"/case/{appointment.case.id}/?tab=appointments"
+        )
+        
+        # Broadcast real-time appointment update
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f'chat_{appointment.case.id}',
+                    {
+                        'type': 'appointment_update',
+                        'action': 'cancelled',
+                        'message': f"Lawyer {request.user.get_full_name() or request.user.email} has cancelled the appointment."
+                    }
+                )
+        except Exception as e:
+            print(f"WebSocket Broadcast Error: {e}")
+            
+        messages.success(request, "Appointment has been cancelled and client has been notified.")
     
     from django.urls import reverse
     return redirect(reverse('lawyer_case_detail', kwargs={'case_id': appointment.case.id}) + '?tab=appointments')
@@ -1092,7 +1129,14 @@ def cancel_appointment(request, appointment_id):
 @approved_lawyer_required
 def edit_appointment(request, appointment_id):
     from clients.models import Appointment
-    appointment = get_object_or_404(Appointment, pk=appointment_id, organizer=request.user)
+    from django.db.models import Q
+    from users.models import Notification
+    
+    appointment = get_object_or_404(
+        Appointment, 
+        Q(organizer=request.user) | Q(attendee=request.user), 
+        pk=appointment_id
+    )
     
     if request.method == "POST":
         date_str = request.POST.get('date')
@@ -1112,7 +1156,32 @@ def edit_appointment(request, appointment_id):
         appointment.notes = request.POST.get('notes')
         appointment.save()
         
-        messages.success(request, "Appointment successfully updated.")
+        # Notify the client
+        Notification.objects.create(
+            recipient=appointment.case.client,
+            title="Appointment Rescheduled / Location Set 📅",
+            message=f"Lawyer {request.user.get_full_name() or request.user.email} has rescheduled/updated '{appointment.title}' for {dt_aware.strftime('%d %b %Y at %I:%M %p')}. Location: {appointment.location or 'Not specified'}.",
+            link=f"/case/{appointment.case.id}/?tab=appointments"
+        )
+        
+        # Broadcast real-time appointment update
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f'chat_{appointment.case.id}',
+                    {
+                        'type': 'appointment_update',
+                        'action': 'rescheduled',
+                        'message': f"Lawyer {request.user.get_full_name() or request.user.email} has updated the appointment."
+                    }
+                )
+        except Exception as e:
+            print(f"WebSocket Broadcast Error: {e}")
+            
+        messages.success(request, "Appointment successfully updated and client notified.")
         
     from django.urls import reverse
     return redirect(reverse('lawyer_case_detail', kwargs={'case_id': appointment.case.id}) + '?tab=appointments')

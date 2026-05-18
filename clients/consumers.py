@@ -550,3 +550,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         User = get_user_model()
         User.objects.filter(pk=self.user.pk).update(is_online=is_online)
 
+    async def appointment_update(self, event):
+        """
+        Receive appointment updates from room group and send to WebSocket.
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'appointment_update',
+            'action': event['action'],
+            'message': event['message']
+        }))
+

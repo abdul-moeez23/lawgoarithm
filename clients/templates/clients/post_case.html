@@ -96,7 +96,9 @@
             <label for="{{ form.title.id_for_label }}" class="form-label">Case Title</label>
             {{ form.title }}
             {% if form.title.errors %}
-            <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+                {% for error in form.title.errors %}
+                    <div class="text-danger small mt-1" style="color: #dc3545 !important; font-weight: 500; margin-top: 0.5rem;">{{ error }}</div>
+                {% endfor %}
             {% endif %}
         </div>
 
@@ -133,7 +135,9 @@
     <label for="{{ form.description.id_for_label }}" class="form-label">Case Description</label>
     {{ form.description }}
     {% if form.description.errors %}
-    <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+        {% for error in form.description.errors %}
+            <div class="text-danger small mt-1" style="color: #dc3545 !important; font-weight: 500; margin-top: 0.5rem; margin-bottom: 0.5rem;">{{ error }}</div>
+        {% endfor %}
     {% endif %}
     <small class="text-muted">Please provide as much detail as possible to help lawyers understand your case.</small>
 </div>

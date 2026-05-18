@@ -26,6 +26,9 @@ urlpatterns = [
     path('dashboard/notifications/read/<int:id>/', views.mark_notification_read, name='mark_notification_read_client'),
     path('dashboard/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_read_client'),
     
+    # Appointments
+    path('case/<int:case_id>/schedule-appointment/', views.client_schedule_appointment, name='client_schedule_appointment'),
+
     # Hiring
     path('hired-lawyers/', views.hired_lawyers, name='hired_lawyers'),
     path('hire/<int:case_id>/<int:lawyer_id>/', views.hire_lawyer, name='hire_lawyer'),
