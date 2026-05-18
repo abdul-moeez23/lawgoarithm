@@ -234,5 +234,34 @@
             grid-template-columns: 1fr !important;
         }
     }
+    @media (max-width: 576px) {
+        .card {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 1.25rem !important;
+            padding: 1.25rem !important;
+        }
+        .card div {
+            width: 100%;
+            text-align: left !important;
+        }
+        .card .btn-outline {
+            display: block;
+            text-align: center;
+            width: 100%;
+        }
+        .stat-card {
+            padding: 1.25rem !important;
+            gap: 1rem !important;
+        }
+        .stat-icon {
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 1.25rem !important;
+        }
+        .page-title h1 {
+            font-size: 1.25rem !important;
+        }
+    }
 </style>
 {% endblock %}

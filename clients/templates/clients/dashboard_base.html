@@ -226,6 +226,89 @@
             .nav-link { justify-content: center; }
         }
 
+        #sidebar-toggle {
+            display: none;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            color: var(--primary-navy);
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            flex-shrink: 0;
+        }
+        #sidebar-toggle:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Mobile Drawer View (max-width: 768px) */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 280px !important;
+                height: 100vh;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                z-index: 9999;
+                padding: 2rem 1.5rem !important;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: 5px 0 25px rgba(15, 23, 42, 0.25);
+            }
+            .nav-link span, .brand-logo span, .user-info {
+                display: inline-block !important;
+            }
+            .user-profile-sm {
+                display: flex !important;
+            }
+            .nav-link {
+                justify-content: flex-start !important;
+            }
+            .main-content {
+                margin-left: 0 !important;
+                padding: 1.25rem 1rem !important;
+            }
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.4);
+                backdrop-filter: blur(3px);
+                z-index: 9998;
+                animation: fadeInOverlay 0.25s ease-out;
+            }
+            .sidebar-overlay.show {
+                display: block;
+            }
+            @keyframes fadeInOverlay {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            #sidebar-toggle {
+                display: flex !important;
+            }
+            .header {
+                gap: 0.75rem !important;
+            }
+            .page-title {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .page-title h1 {
+                font-size: 1.4rem !important;
+            }
+        }
+
         /* Notification Dropdown */
         .header-actions {
             position: relative;
@@ -445,6 +528,7 @@
 </head>
 
 <body>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <!-- Sidebar -->
     <nav class="sidebar">
         <a href="{% url 'client_dashboard' %}" class="brand-logo">
@@ -512,6 +596,9 @@
     <main class="main-content">
         <header class="header">
             <div class="page-title">
+                <button id="sidebar-toggle" aria-label="Toggle Navigation Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <h1>{% block header_title %}Overview{% endblock %}</h1>
             </div>
             <div class="header-actions">
@@ -850,6 +937,34 @@
                 if (e.target === this) closeDeleteModal();
             });
         }
+
+        // Mobile Sidebar Drawer Toggle Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            if (toggleBtn && sidebar && overlay) {
+                const openSidebar = () => {
+                    sidebar.classList.add('open');
+                    overlay.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                };
+
+                const closeSidebar = () => {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                };
+
+                toggleBtn.addEventListener('click', openSidebar);
+                overlay.addEventListener('click', closeSidebar);
+
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', closeSidebar);
+                });
+            }
+        });
     </script>
 </body>
 </html>

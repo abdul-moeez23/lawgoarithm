@@ -313,7 +313,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         result = await self.delete_document_db(document_id, mode)
         
         if result['success']:
-            if mode == 'everyone':
+            actual_mode = result.get('mode_fallback', mode)
+            if actual_mode == 'everyone':
                 # Broadcast to everyone in the case group
                 await self.channel_layer.group_send(
                     self.room_group_name,
@@ -404,8 +405,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return {'success': True}
             elif mode == 'everyone':
                 if document.uploaded_by == self.user:
-                    document.delete()
-                    return {'success': True}
+                    if not document.can_delete_everyone:
+                        document.hidden_for.add(self.user)
+                        return {'success': True, 'mode_fallback': 'me'}
+                    document.is_deleted_everyone = True
+                    document.save()
+                    return {'success': True, 'mode_fallback': 'everyone'}
                 else:
                     return {'success': False, 'message': 'Only the uploader can delete for everyone.'}
         except CaseDocument.DoesNotExist:
@@ -549,4 +554,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         User.objects.filter(pk=self.user.pk).update(is_online=is_online)
+
+    async def appointment_update(self, event):
+        """
+        Receive appointment updates from room group and send to WebSocket.
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'appointment_update',
+            'action': event['action'],
+            'message': event['message']
+        }))
 

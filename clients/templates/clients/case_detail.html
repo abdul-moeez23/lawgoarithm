@@ -333,6 +333,58 @@
     .text-muted {
         color: #6b7280;
     }
+
+    /* Mobile-first adjustments for Case Detail Page */
+    @media (max-width: 992px) {
+        .detail-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+        }
+        .case-nav {
+            gap: 1.25rem !important;
+            padding-bottom: 0.5rem !important;
+            margin-bottom: 1.5rem !important;
+            border-bottom: 2px solid var(--border-color) !important;
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important; /* Firefox */
+        }
+        .case-nav::-webkit-scrollbar {
+            display: none !important; /* Safari/Chrome */
+        }
+        .case-tab {
+            flex-shrink: 0 !important;
+            padding: 0.75rem 0.25rem !important;
+            font-size: 0.95rem !important;
+        }
+        .message-container {
+            height: calc(100vh - 280px) !important;
+            min-height: 400px !important;
+        }
+        .message-bubble {
+            max-width: 85% !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .message-container {
+            height: calc(100vh - 240px) !important;
+            min-height: 350px !important;
+        }
+        .message-header {
+            padding: 0.5rem 1rem !important;
+        }
+        .message-list {
+            padding: 1rem !important;
+            gap: 0.75rem !important;
+        }
+        .message-bubble {
+            max-width: 90% !important;
+            font-size: 0.9rem !important;
+            padding: 0.6rem 0.8rem !important;
+        }
+    }
 </style>
 
 <div class="case-nav custom-tabs-container">
@@ -634,7 +686,7 @@
                                         style="display: block; padding: 0.25rem 1rem; color: #334155; text-decoration: none; font-size: 0.85rem;">
                                         <i class="fas fa-eye-slash me-2"></i> Delete for me
                                     </a></li>
-                                {% if doc.uploaded_by == request.user %}
+                                {% if doc.uploaded_by == request.user and doc.can_delete_everyone %}
                                 <li>
                                     <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #e2e8f0;">
                                 </li>
@@ -794,30 +846,44 @@
 <!-- APPOINTMENTS TAB -->
 <div id="appointments" class="tab-content">
     <div class="card">
-        <h3>Scheduled Appointments</h3>
-        <p style="color: var(--text-gray); font-size: 0.9rem;">Appointments are scheduled by your lawyer.</p>
-        <br>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h3 style="margin: 0;">Scheduled Appointments</h3>
+                <p style="color: var(--text-gray); font-size: 0.85rem; margin-top: 4px;">Book, view, or manage your case appointments.</p>
+            </div>
+            {% if active_interaction %}
+            <!-- Button to open scheduling modal -->
+            <button type="button" class="btn-primary" onclick="openScheduleModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 0.6rem 1.25rem; font-size: 0.9rem; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s;">
+                <i class="fas fa-calendar-plus"></i> Propose Appointment
+            </button>
+            {% endif %}
+        </div>
+
         {% if appointments %}
         <div style="display:flex; flex-direction:column; gap:1rem;">
             {% for appt in appointments %}
-            <div
-                style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
                 <div style="display:flex; gap:1rem; align-items:center;">
-                    <div
-                        style="background: var(--primary-navy); color:white; padding: 0.5rem; text-align:center; border-radius: 6px; width: 60px;">
-                        <div style="font-size:0.8rem; text-transform:uppercase;">{{ appt.datetime|date:"M" }}</div>
-                        <div style="font-weight:bold; font-size:1.2rem;">{{ appt.datetime|date:"d" }}</div>
+                    <div style="background: var(--primary-navy); color:white; padding: 0.5rem; text-align:center; border-radius: 6px; width: 60px; min-width: 60px;">
+                        <div style="font-size:0.75rem; text-transform:uppercase;">{{ appt.datetime|date:"M" }}</div>
+                        <div style="font-weight:bold; font-size:1.15rem;">{{ appt.datetime|date:"d" }}</div>
                     </div>
                     <div>
-                        <h4 style="margin:0; font-size:1rem;">{{ appt.title }}</h4>
-                        <div style="font-size:0.9rem; color:var(--text-gray);">
-                            {{ appt.datetime|date:"g:i A" }} ({{ appt.duration_minutes }} min)
+                        <h4 style="margin:0; font-size:1rem; color: var(--primary-navy);">{{ appt.title }}</h4>
+                        <div style="font-size:0.9rem; color:var(--text-gray); margin-top: 2px;">
+                            <i class="far fa-clock" style="margin-right: 4px;"></i>{{ appt.datetime|date:"g:i A" }} ({{ appt.duration_minutes }} min)
                         </div>
-                        {% if appt.location %}
-                        <div style="font-size:0.85rem; color:var(--text-gray); margin-top:2px;">
-                            {% if appt.location|slice:":4" == "http" %}
+                        <div style="font-size:0.8rem; color:var(--text-gray); margin-top: 2px;">
+                            <strong>Organizer:</strong> 
+                            {% if appt.organizer == request.user %}You{% else %}{{ appt.organizer.get_full_name }}{% endif %}
+                        </div>
+                        <div style="font-size:0.85rem; color:var(--text-gray); margin-top: 4px;">
+                            <strong>Location:</strong> 
+                            {% if appt.location == "TBD by Lawyer" %}
+                            <span style="color:#d97706; font-weight:600;"><i class="fas fa-clock"></i> TBD by Lawyer</span>
+                            {% elif appt.location|slice:":4" == "http" %}
                             <a href="{{ appt.location }}" target="_blank"
-                                style="display:inline-flex; align-items:center; gap:6px; margin-top:4px; padding:4px 14px; border-radius:20px; border:1px solid #16a34a; color:#16a34a; font-size:0.8rem; font-weight:600; text-decoration:none; transition:all 0.2s;"
+                                style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:20px; border:1px solid #16a34a; color:#16a34a; font-size:0.75rem; font-weight:600; text-decoration:none; transition:all 0.2s;"
                                 onmouseover="this.style.background='#16a34a';this.style.color='white';"
                                 onmouseout="this.style.background='transparent';this.style.color='#16a34a';">
                                 <i class="fas fa-video"></i> Join Call
@@ -826,7 +892,6 @@
                             <i class="fas fa-map-marker-alt" style="margin-right:4px;"></i> {{ appt.location }}
                             {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                 </div>
                 <span class="badge {% if appt.status == 'scheduled' %}bg-primary{% elif appt.status == 'completed' %}bg-success{% elif appt.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} text-white">{{ appt.get_status_display }}</span>
@@ -834,14 +899,104 @@
             {% endfor %}
         </div>
         {% else %}
-        <div
-            style="text-align: center; padding: 2rem; border: 1px dashed var(--border-color); border-radius: 8px; color: var(--text-gray);">
+        <div style="text-align: center; padding: 2rem; border: 1px dashed var(--border-color); border-radius: 8px; color: var(--text-gray);">
             <i class="far fa-calendar-times" style="font-size: 2rem; margin-bottom: 1rem; display:block;"></i>
             No appointments scheduled yet.
         </div>
         {% endif %}
     </div>
 </div>
+
+<!-- PROPOSE APPOINTMENT MODAL -->
+{% if active_interaction %}
+<div id="scheduleModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; padding: 1rem; transition: all 0.3s ease;">
+    <div class="card" style="width: 100%; max-width: 500px; background: white; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border: 1px solid var(--border-color); overflow: hidden; animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.5rem; background: #f8fafc;">
+            <h3 style="margin: 0; color: var(--primary-navy); font-size: 1.25rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fas fa-calendar-alt" style="color: #d97706;"></i> Propose Appointment
+            </h3>
+            <button type="button" onclick="closeScheduleModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-gray); transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-gray)'">&times;</button>
+        </div>
+        <form action="{% url 'client_schedule_appointment' case.id %}" method="POST" style="padding: 1.5rem;">
+            {% csrf_token %}
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-weight: 600; color: var(--primary-navy); font-size: 0.9rem; margin-bottom: 0.4rem;">Title / Purpose</label>
+                <input type="text" name="title" required placeholder="e.g., Initial Consultation, Case Review" style="width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-navy)'" onblur="this.style.borderColor='var(--border-color)'">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                <div>
+                    <label style="display: block; font-weight: 600; color: var(--primary-navy); font-size: 0.9rem; margin-bottom: 0.4rem;">Date</label>
+                    <input type="date" name="date" required id="appointment_date_input" style="width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-navy)'" onblur="this.style.borderColor='var(--border-color)'">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; color: var(--primary-navy); font-size: 0.9rem; margin-bottom: 0.4rem;">Time</label>
+                    <input type="time" name="time" required style="width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-navy)'" onblur="this.style.borderColor='var(--border-color)'">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-weight: 600; color: var(--primary-navy); font-size: 0.9rem; margin-bottom: 0.4rem;">Duration</label>
+                <select name="duration" style="width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none; background: white; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-navy)'" onblur="this.style.borderColor='var(--border-color)'">
+                    <option value="15">15 Minutes</option>
+                    <option value="30" selected>30 Minutes</option>
+                    <option value="45">45 Minutes</option>
+                    <option value="60">1 Hour</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; color: var(--primary-navy); font-size: 0.9rem; margin-bottom: 0.4rem;">Additional Notes / Agenda</label>
+                <textarea name="notes" rows="3" placeholder="Explain the key details you want to discuss..." style="width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; font-family: inherit; outline: none; resize: vertical; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary-navy)'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                <button type="button" class="btn-outline" onclick="closeScheduleModal()" style="padding: 0.6rem 1.25rem; font-weight: 600; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button type="submit" class="btn-primary" style="padding: 0.6rem 1.25rem; font-weight: 600; font-size: 0.9rem; border-radius: 8px; border: none; cursor: pointer;">Book Appointment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+</style>
+
+<script>
+    function openScheduleModal() {
+        // Automatically set date input to tomorrow as a smart default
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        // Format YYYY-MM-DD
+        const yyyy = tomorrow.getFullYear();
+        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const dd = String(tomorrow.getDate()).padStart(2, '0');
+        
+        const dateInput = document.getElementById('appointment_date_input');
+        if (dateInput) {
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            dateInput.min = `${yyyy}-${mm}-${dd}`; // Restrict picking past dates on client side
+        }
+        
+        document.getElementById('scheduleModal').style.display = 'flex';
+    }
+    
+    function closeScheduleModal() {
+        document.getElementById('scheduleModal').style.display = 'none';
+    }
+</script>
+{% endif %}
 
 <script>
     let isSoundMuted = localStorage.getItem('globalChatMuted') === 'true';
@@ -1017,6 +1172,14 @@
             } else if (data.type === 'document_uploaded') {
                 // ... document upload handling ...
                 handleNewDocument(data.doc);
+            } else if (data.type === 'appointment_update') {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav');
+                audio.play().catch(() => {});
+                setTimeout(() => {
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('tab', 'appointments');
+                    window.location.href = currentUrl.toString();
+                }, 800);
             } else if (data.type === 'error') {
                 alert('Action Failed: ' + data.message);
             }
@@ -1116,12 +1279,34 @@
                             if (!href.includes('delete')) return;
                             e.preventDefault();
                             const mode = href.includes('everyone') ? 'everyone' : 'me';
-                            if (mode === 'everyone' && !confirm('Are you sure?')) return;
-                            chatSocket.send(JSON.stringify({
-                                'action': 'delete_document',
-                                'document_id': doc.id,
-                                'mode': mode
-                            }));
+                            
+                            if (mode === 'everyone') {
+                                showDeleteModal(
+                                    'Delete for Everyone?',
+                                    'This will hide the document from all users. Note: You can only do this within 10 minutes of upload. A permanent record is kept for Admin review.',
+                                    function() {
+                                        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                                            chatSocket.send(JSON.stringify({
+                                                'action': 'delete_document',
+                                                'document_id': doc.id,
+                                                'mode': mode
+                                            }));
+                                        } else {
+                                            alert('Connection lost. Please refresh the page.');
+                                        }
+                                    }
+                                );
+                            } else {
+                                if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                                    chatSocket.send(JSON.stringify({
+                                        'action': 'delete_document',
+                                        'document_id': doc.id,
+                                        'mode': mode
+                                    }));
+                                } else {
+                                    alert('Connection lost. Please refresh the page.');
+                                }
+                            }
                         });
                     });
                 }

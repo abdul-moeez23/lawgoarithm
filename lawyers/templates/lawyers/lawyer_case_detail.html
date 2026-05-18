@@ -430,10 +430,22 @@
                                                 <i class="fas fa-download"></i>
                                             </a>
                                             {% if doc.uploaded_by == request.user %}
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                onclick="confirmDeleteDocument('{{ doc.id }}')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <div class="dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-outline-danger dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                    {% if doc.can_delete_everyone %}
+                                                    <li><button class="dropdown-item small d-flex align-items-center gap-2 text-dark bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('{{ doc.id }}', 'me')">
+                                                        <i class="fas fa-eye-slash text-muted"></i> Delete for me
+                                                    </button></li>
+                                                    <li><hr class="dropdown-divider my-1"></li>
+                                                    {% endif %}
+                                                    <li><button class="dropdown-item small text-danger d-flex align-items-center gap-2 bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('{{ doc.id }}', 'everyone')">
+                                                        <i class="fas fa-trash-alt"></i> Delete for everyone
+                                                    </button></li>
+                                                </ul>
+                                            </div>
                                             {% endif %}
                                         </div>
                                     </td>
@@ -457,53 +469,7 @@
     <!-- Appointments Tab -->
     <div class="tab-pane fade" id="appointments" role="tabpanel">
         <div class="row g-4">
-            <div class="col-lg-4">
-                <div class="card-box">
-                    <h5 class="mb-4"><i class="fas fa-calendar-plus me-2 text-success"></i>Schedule Meeting</h5>
-                    <form action="{% url 'schedule_appointment' case.id %}" method="POST">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Topic / Title</label>
-                            <input type="text" name="title" class="form-control rounded-3" placeholder="Case Discussion"
-                                required>
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-8">
-                                <label class="form-label small fw-bold">Date</label>
-                                <input type="date" name="date" class="form-control rounded-3" required>
-                            </div>
-                            <div class="col-4">
-                                <label class="form-label small fw-bold">Time</label>
-                                <input type="time" name="time" class="form-control rounded-3" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Duration</label>
-                            <select name="duration" class="form-select rounded-3">
-                                <option value="15">15 minutes</option>
-                                <option value="30" selected>30 minutes</option>
-                                <option value="45">45 minutes</option>
-                                <option value="60">1 hour</option>
-                                <option value="90">1.5 hours</option>
-                                <option value="120">2 hours</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Meeting Link / Location</label>
-                            <input type="text" name="location" class="form-control rounded-3"
-                                placeholder="Paste Zoom/Meet link or Office address">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold">Notes (Optional)</label>
-                            <textarea name="notes" class="form-control rounded-3" rows="2"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary-custom w-100 py-3">
-                            <i class="fas fa-save me-2"></i> Book Appointment
-                        </button>
-                    </form>
-                </div>
-            </div>
-            <div class="col-lg-8">
+            <div class="col-lg-12">
                 <div class="card-box">
                     <h5 class="mb-4">Scheduled for Case ({{ appointments|length }})</h5>
                     <div class="timeline-appointments">
@@ -1327,14 +1293,24 @@
         }, 400); // Small delay to allow scroll to start
     }
 
-    function confirmDeleteDocument(docId) {
-        showDeleteModal(
-            'Delete for Everyone?',
-            'This will hide the document from all users. Note: You can only do this within 10 minutes of upload. A permanent record is kept for Admin review.',
-            function() {
-                window.location.href = `/lawyer/document/${docId}/delete/everyone/`;
-            }
-        );
+    function confirmDeleteDocument(docId, mode = 'everyone') {
+        if (mode === 'everyone') {
+            showDeleteModal(
+                'Delete for Everyone?',
+                'This will hide the document from all users. Note: You can only do this within 10 minutes of upload. A permanent record is kept for Admin review.',
+                function() {
+                    window.location.href = `/lawyer/document/${docId}/delete/everyone/`;
+                }
+            );
+        } else {
+            showDeleteModal(
+                'Delete for Yourself?',
+                'This will hide the document from your view only. The client will still be able to access it.',
+                function() {
+                    window.location.href = `/lawyer/document/${docId}/delete/me/`;
+                }
+            );
+        }
     }
 
     function openEditAppointmentModal(id, title, date, time, duration, location, notes) {
@@ -1413,6 +1389,14 @@
                     setTimeout(() => msgElement.remove(), 300);
                 }
             });
+        } else if (data.type === 'appointment_update') {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav');
+            audio.play().catch(() => {});
+            setTimeout(() => {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('tab', 'appointments');
+                window.location.href = currentUrl.toString();
+            }, 800);
         }
     };
 
@@ -1492,9 +1476,22 @@
                     <a href="${doc.file_url}" download class="btn btn-sm btn-outline-info">
                         <i class="fas fa-download"></i>
                     </a>
-                    ${isMe ? `<button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteDocument('${doc.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>` : ''}
+                    ${isMe ? `
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-sm btn-outline-danger dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><button class="dropdown-item small d-flex align-items-center gap-2 bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('${doc.id}', 'me')">
+                                <i class="fas fa-eye-slash text-muted"></i> Delete for me
+                            </button></li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li><button class="dropdown-item small text-danger d-flex align-items-center gap-2 bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('${doc.id}', 'everyone')">
+                                <i class="fas fa-trash-alt"></i> Delete for everyone
+                            </button></li>
+                        </ul>
+                    </div>
+                    ` : ''}
                 </div>
             </td>
         `;

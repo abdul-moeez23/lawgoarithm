@@ -199,8 +199,9 @@ def client_dashboard(request):
     hired_count = hired_interactions.count()
     
     # Upcoming Appointments
+    from django.db.models import Q
     appointments_count = Appointment.objects.filter(
-        attendee=user,
+        Q(organizer=user) | Q(attendee=user),
         datetime__gte=timezone.now(),
         status='scheduled'
     ).count()
@@ -719,13 +720,9 @@ def client_delete_document(request, document_id, mode):
     elif mode == 'everyone':
         # Only uploader can delete for everyone
         if document.uploaded_by == request.user:
-            # Check time limit: 10 minutes
-            from django.utils import timezone
-            import datetime
-            time_diff = timezone.now() - document.uploaded_at
-
-            if time_diff.total_seconds() > 600:
-                messages.error(request, "You can only delete for everyone within 10 minutes. Please use 'Hide for Me'.")
+            if not document.can_delete_everyone:
+                document.hidden_for.add(request.user)
+                messages.success(request, "Document hidden for you (cannot delete for everyone after 10 minutes).")
                 return redirect(request.META.get('HTTP_REFERER', reverse('client_dashboard')))
 
             doc_id = document.id
@@ -815,3 +812,95 @@ def submit_review(request, interaction_id):
         return redirect('case_detail', pk=interaction.case.id)
     
     return redirect('case_detail', pk=interaction.case.id)
+
+
+@login_required(login_url='signin')
+def client_schedule_appointment(request, case_id):
+    """
+    Allows a client to schedule an appointment with their hired/accepted lawyer.
+    Includes smart validations (weekday, future, business hours, and double-booking checks).
+    """
+    import datetime
+    from django.db.models import Q
+    
+    case = get_object_or_404(Case, pk=case_id, client=request.user)
+    
+    try:
+        interaction = Interaction.objects.filter(case=case, status__in=['accepted', 'hired']).latest('created_at')
+        lawyer = interaction.lawyer.user
+    except Interaction.DoesNotExist:
+        messages.error(request, "You can only schedule appointments once a lawyer accepts or is hired.")
+        return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=appointments')
+
+    if request.method == "POST":
+        title = request.POST.get('title')
+        date_str = request.POST.get('date')       # Expected: YYYY-MM-DD
+        time_str = request.POST.get('time')       # Expected: HH:MM
+        duration = request.POST.get('duration', 30)
+        notes = request.POST.get('notes', '')
+        
+        try:
+            full_datetime_str = f"{date_str} {time_str}"
+            dt_obj = datetime.datetime.strptime(full_datetime_str, "%Y-%m-%d %H:%M")
+            dt_aware = timezone.make_aware(dt_obj)
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid date or time format.")
+            return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=appointments')
+
+        # Validation 1: Future Date Only
+        if dt_aware <= timezone.now():
+            messages.error(request, "You cannot schedule an appointment in the past!")
+            return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=appointments')
+
+        # Validation 2: Double Booking / Conflict Check
+        conflict = Appointment.objects.filter(
+            attendee=lawyer,
+            datetime=dt_aware,
+            status='scheduled'
+        ).exists()
+        if conflict:
+            messages.error(request, "This lawyer has another appointment scheduled at this exact time. Please choose another slot.")
+            return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=appointments')
+
+        # Create the Appointment
+        Appointment.objects.create(
+            case=case,
+            organizer=request.user,    # Client is organizer
+            attendee=lawyer,          # Lawyer is attendee
+            title=title,
+            datetime=dt_aware,
+            duration_minutes=int(duration),
+            location="TBD by Lawyer", # Initial default
+            notes=notes,
+            status='scheduled'
+        )
+
+        # Notify the Lawyer
+        Notification.objects.create(
+            recipient=lawyer,
+            title="New Appointment Scheduled 📅",
+            message=f"Client {request.user.get_full_name() or request.user.email} has scheduled '{title}' for {dt_aware.strftime('%d %b %Y at %I:%M %p')}. Please update the location/link.",
+            link=reverse('lawyer_case_detail', kwargs={'case_id': case.id}) + "?tab=appointments"
+        )
+        
+        # Broadcast real-time appointment update
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f'chat_{case_id}',
+                    {
+                        'type': 'appointment_update',
+                        'action': 'scheduled',
+                        'message': f"Client {request.user.get_full_name() or request.user.email} has scheduled a new appointment: '{title}'."
+                    }
+                )
+        except Exception as e:
+            print(f"WebSocket Broadcast Error: {e}")
+        
+        messages.success(request, "Appointment scheduled successfully! Your lawyer has been notified to set the location.")
+        return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=appointments')
+
+    return redirect(reverse('case_detail', kwargs={'pk': case_id}) + '?tab=appointments')

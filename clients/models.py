@@ -56,6 +56,12 @@ class CaseDocument(models.Model):
     def __str__(self):
         return self.title or self.file.name
 
+    @property
+    def can_delete_everyone(self):
+        from django.utils import timezone
+        time_diff = timezone.now() - self.uploaded_at
+        return time_diff.total_seconds() <= 600
+
 
 class Interaction(models.Model):
     """
