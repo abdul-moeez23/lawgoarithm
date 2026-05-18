@@ -1279,12 +1279,34 @@
                             if (!href.includes('delete')) return;
                             e.preventDefault();
                             const mode = href.includes('everyone') ? 'everyone' : 'me';
-                            if (mode === 'everyone' && !confirm('Are you sure?')) return;
-                            chatSocket.send(JSON.stringify({
-                                'action': 'delete_document',
-                                'document_id': doc.id,
-                                'mode': mode
-                            }));
+                            
+                            if (mode === 'everyone') {
+                                showDeleteModal(
+                                    'Delete for Everyone?',
+                                    'This will hide the document from all users. Note: You can only do this within 10 minutes of upload. A permanent record is kept for Admin review.',
+                                    function() {
+                                        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                                            chatSocket.send(JSON.stringify({
+                                                'action': 'delete_document',
+                                                'document_id': doc.id,
+                                                'mode': mode
+                                            }));
+                                        } else {
+                                            alert('Connection lost. Please refresh the page.');
+                                        }
+                                    }
+                                );
+                            } else {
+                                if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                                    chatSocket.send(JSON.stringify({
+                                        'action': 'delete_document',
+                                        'document_id': doc.id,
+                                        'mode': mode
+                                    }));
+                                } else {
+                                    alert('Connection lost. Please refresh the page.');
+                                }
+                            }
                         });
                     });
                 }
