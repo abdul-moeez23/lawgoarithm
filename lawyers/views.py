@@ -971,14 +971,10 @@ def delete_document(request, document_id, mode):
     elif mode == 'everyone':
         # Verify permissions: only uploader can delete for everyone
         if document.uploaded_by == request.user:
-            # Check time limit: only allow delete for everyone within 10 minutes
-            from django.utils import timezone
-            import datetime
-            time_diff = timezone.now() - document.uploaded_at
-            
-            if time_diff.total_seconds() > 600: # 10 minutes
-                message = "You can only delete for everyone within 10 minutes of uploading. Please use 'Hide for Me' instead."
-                success = False
+            if not document.can_delete_everyone:
+                document.hidden_for.add(request.user)
+                success = True
+                message = "Document hidden for you (cannot delete for everyone after 10 minutes)."
             else:
                 doc_id = document.id
                 case_id = document.case.id

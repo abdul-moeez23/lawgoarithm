@@ -131,7 +131,8 @@ class LawyerDashboardConsumer(AsyncWebsocketConsumer):
         result = await self.delete_document_db(document_id, mode)
         
         if result['success']:
-            if mode == 'everyone':
+            actual_mode = result.get('mode_fallback', mode)
+            if actual_mode == 'everyone':
                 # Broadcast to the specific case group so the client sees it removed
                 if result['case_id']:
                     await self.channel_layer.group_send(
@@ -176,8 +177,12 @@ class LawyerDashboardConsumer(AsyncWebsocketConsumer):
                 return {'success': True, 'case_id': case_id}
             elif mode == 'everyone':
                 if document.uploaded_by == self.user:
-                    document.delete()
-                    return {'success': True, 'case_id': case_id}
+                    if not document.can_delete_everyone:
+                        document.hidden_for.add(self.user)
+                        return {'success': True, 'case_id': case_id, 'mode_fallback': 'me'}
+                    document.is_deleted_everyone = True
+                    document.save()
+                    return {'success': True, 'case_id': case_id, 'mode_fallback': 'everyone'}
                 else:
                     return {'success': False, 'message': 'Only the uploader can delete for everyone.'}
         except CaseDocument.DoesNotExist:
