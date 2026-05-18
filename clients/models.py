@@ -59,6 +59,8 @@ class CaseDocument(models.Model):
     @property
     def can_delete_everyone(self):
         from django.utils import timezone
+        if self.uploaded_by and hasattr(self.uploaded_by, 'lawyer_profile'):
+            return True
         time_diff = timezone.now() - self.uploaded_at
         return time_diff.total_seconds() <= 600
 
