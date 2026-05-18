@@ -972,9 +972,8 @@ def delete_document(request, document_id, mode):
         # Verify permissions: only uploader can delete for everyone
         if document.uploaded_by == request.user:
             if not document.can_delete_everyone:
-                document.hidden_for.add(request.user)
-                success = True
-                message = "Document hidden for you (cannot delete for everyone after 10 minutes)."
+                message = "You can only delete within 10 minutes of uploading."
+                success = False
             else:
                 doc_id = document.id
                 case_id = document.case.id

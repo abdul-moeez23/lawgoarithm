@@ -429,7 +429,7 @@
                                             <a href="{{ doc.file.url }}" download class="btn btn-sm btn-outline-info">
                                                 <i class="fas fa-download"></i>
                                             </a>
-                                            {% if doc.uploaded_by == request.user %}
+                                            {% if doc.uploaded_by == request.user and doc.can_delete_everyone %}
                                             <button class="btn btn-sm btn-outline-danger"
                                                 onclick="confirmDeleteDocument('{{ doc.id }}')">
                                                 <i class="fas fa-trash"></i>
