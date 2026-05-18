@@ -429,11 +429,23 @@
                                             <a href="{{ doc.file.url }}" download class="btn btn-sm btn-outline-info">
                                                 <i class="fas fa-download"></i>
                                             </a>
-                                            {% if doc.uploaded_by == request.user and doc.can_delete_everyone %}
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                onclick="confirmDeleteDocument('{{ doc.id }}')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            {% if doc.uploaded_by == request.user %}
+                                            <div class="dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-outline-danger dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                    {% if doc.can_delete_everyone %}
+                                                    <li><button class="dropdown-item small d-flex align-items-center gap-2 text-dark bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('{{ doc.id }}', 'me')">
+                                                        <i class="fas fa-eye-slash text-muted"></i> Delete for me
+                                                    </button></li>
+                                                    <li><hr class="dropdown-divider my-1"></li>
+                                                    {% endif %}
+                                                    <li><button class="dropdown-item small text-danger d-flex align-items-center gap-2 bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('{{ doc.id }}', 'everyone')">
+                                                        <i class="fas fa-trash-alt"></i> Delete for everyone
+                                                    </button></li>
+                                                </ul>
+                                            </div>
                                             {% endif %}
                                         </div>
                                     </td>
@@ -1281,14 +1293,24 @@
         }, 400); // Small delay to allow scroll to start
     }
 
-    function confirmDeleteDocument(docId) {
-        showDeleteModal(
-            'Delete for Everyone?',
-            'This will hide the document from all users. Note: You can only do this within 10 minutes of upload. A permanent record is kept for Admin review.',
-            function() {
-                window.location.href = `/lawyer/document/${docId}/delete/everyone/`;
-            }
-        );
+    function confirmDeleteDocument(docId, mode = 'everyone') {
+        if (mode === 'everyone') {
+            showDeleteModal(
+                'Delete for Everyone?',
+                'This will hide the document from all users. Note: You can only do this within 10 minutes of upload. A permanent record is kept for Admin review.',
+                function() {
+                    window.location.href = `/lawyer/document/${docId}/delete/everyone/`;
+                }
+            );
+        } else {
+            showDeleteModal(
+                'Delete for Yourself?',
+                'This will hide the document from your view only. The client will still be able to access it.',
+                function() {
+                    window.location.href = `/lawyer/document/${docId}/delete/me/`;
+                }
+            );
+        }
     }
 
     function openEditAppointmentModal(id, title, date, time, duration, location, notes) {
@@ -1454,9 +1476,22 @@
                     <a href="${doc.file_url}" download class="btn btn-sm btn-outline-info">
                         <i class="fas fa-download"></i>
                     </a>
-                    ${isMe ? `<button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteDocument('${doc.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>` : ''}
+                    ${isMe ? `
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-sm btn-outline-danger dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><button class="dropdown-item small d-flex align-items-center gap-2 bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('${doc.id}', 'me')">
+                                <i class="fas fa-eye-slash text-muted"></i> Delete for me
+                            </button></li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li><button class="dropdown-item small text-danger d-flex align-items-center gap-2 bg-transparent border-0 py-2 w-100 text-start" onclick="confirmDeleteDocument('${doc.id}', 'everyone')">
+                                <i class="fas fa-trash-alt"></i> Delete for everyone
+                            </button></li>
+                        </ul>
+                    </div>
+                    ` : ''}
                 </div>
             </td>
         `;

@@ -173,11 +173,10 @@ class LawyerDashboardConsumer(AsyncWebsocketConsumer):
                 return {'success': False, 'message': 'Permission denied.'}
 
             if mode == 'me':
-                return {'success': False, 'message': 'Delete for me is not supported.'}
+                document.hidden_for.add(self.user)
+                return {'success': True, 'case_id': case_id}
             elif mode == 'everyone':
                 if document.uploaded_by == self.user:
-                    if not document.can_delete_everyone:
-                        return {'success': False, 'message': 'You can only delete within 10 minutes.'}
                     document.is_deleted_everyone = True
                     document.save()
                     return {'success': True, 'case_id': case_id, 'mode_fallback': 'everyone'}

@@ -971,17 +971,13 @@ def delete_document(request, document_id, mode):
     elif mode == 'everyone':
         # Verify permissions: only uploader can delete for everyone
         if document.uploaded_by == request.user:
-            if not document.can_delete_everyone:
-                message = "You can only delete within 10 minutes of uploading."
-                success = False
-            else:
-                doc_id = document.id
-                case_id = document.case.id
-                # Soft delete for everyone (keep in DB for Admin/Audit)
-                document.is_deleted_everyone = True
-                document.save()
-                success = True
-                message = "Document deleted for everyone."
+            doc_id = document.id
+            case_id = document.case.id
+            # Soft delete for everyone (keep in DB for Admin/Audit)
+            document.is_deleted_everyone = True
+            document.save()
+            success = True
+            message = "Document deleted for everyone."
                 
                 # Broadcast deletion via WebSocket
                 from channels.layers import get_channel_layer

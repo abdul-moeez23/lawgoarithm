@@ -64,12 +64,18 @@
                                 </a>
                             </div>
                             
-                            {% if doc.uploaded_by == request.user and doc.can_delete_everyone %}
+                            {% if doc.uploaded_by == request.user %}
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                    {% if doc.can_delete_everyone %}
+                                    <li><a class="dropdown-item small d-flex align-items-center gap-2 delete-doc-btn" href="{% url 'delete_document' doc.id 'me' %}" data-mode="me">
+                                        <i class="fas fa-eye-slash text-muted"></i> Delete for me
+                                    </a></li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    {% endif %}
                                     <li><a class="dropdown-item small text-danger d-flex align-items-center gap-2 delete-doc-btn" href="{% url 'delete_document' doc.id 'everyone' %}" data-mode="everyone">
                                         <i class="fas fa-trash-alt"></i> Delete for everyone
                                     </a></li>
